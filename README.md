@@ -26,8 +26,22 @@ SLVMS adalah aplikasi manajemen pinjaman dan transaksi berbasis Laravel 12 yang 
 
 ## 📦 Instalasi
 
-```bash
-git clone https://github.com/your-username/slvms.git
-cd slvms
-composer run setup
-```
+git clone https://github.com/lengGod/slvms-accounting.git
+cd slvms-accounting
+
+# Install dependency PHP
+
+composer install
+
+# Salin file .env dan generate key
+
+cp .env.example .env
+php artisan key:generate
+
+# Pastikan konfigurasi database sudah benar
+
+php artisan migrate --seed
+
+# Install dependency frontend
+
+npm install && npm run build
