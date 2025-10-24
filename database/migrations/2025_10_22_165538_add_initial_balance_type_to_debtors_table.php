@@ -9,7 +9,8 @@ return new class extends Migration
     public function up()
     {
         Schema::table('debtors', function (Blueprint $table) {
-            $table->enum('initial_balance_type', ['pokok', 'bagi_hasil'])->default('pokok')->after('initial_balance');
+            // Ubah dari enum ke string agar bisa menyimpan kombinasi
+            $table->string('initial_balance_type')->default('pokok')->after('initial_balance');
         });
     }
 
