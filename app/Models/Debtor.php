@@ -14,6 +14,8 @@ class Debtor extends Model
         'address',
         'phone',
         'initial_balance',
+        'initial_pokok_balance',
+        'initial_bagi_hasil_balance',
         'joined_at',
         'category',
         'initial_balance_type',
@@ -21,6 +23,8 @@ class Debtor extends Model
 
     protected $casts = [
         'initial_balance' => 'decimal:2',
+        'initial_pokok_balance' => 'decimal:2',
+        'initial_bagi_hasil_balance' => 'decimal:2',
         'joined_at' => 'date',
     ];
 
@@ -53,31 +57,13 @@ class Debtor extends Model
     }
 
     /**
-     * Search debtors by name or other attributes
-     */
-    public static function search($keyword)
-    {
-        return self::where('name', 'like', '%' . $keyword . '%')
-            ->orWhere('address', 'like', '%' . $keyword . '%')
-            ->orWhere('phone', 'like', '%' . $keyword . '%')
-            ->get();
-    }
-
-    /**
      * Get the current balance attribute
-     * PERBAIKAN: Saldo saat ini = posisi dana sebenarnya
-     * Saldo Saat Ini = (Total Pembayaran + Total Titipan) - Total Piutang
-     * CATATAN: initial_balance TIDAK dihitung, hanya untuk tampilan/history
+     * PERBAIKAN: Saldo saat ini = Total Titipan (uang yang benar-benar kita pegang)
      */
     public function getCurrentBalanceAttribute()
     {
-        // Hitung saldo dari transaksi saja (tanpa initial_balance)
-        $transactionBalance = $this->total_pembayaran - $this->total_piutang;
-
-        // Tambahkan titipan ke saldo
-        // Jika ada titipan, akan menambah saldo (positif)
-        // Jika piutang > pembayaran+titipan, akan negatif (hutang bersih)
-        return $transactionBalance + $this->total_titipan;
+        // Hitung total titipan yang masih aktif (belum digunakan)
+        return $this->titipans()->sum('amount');
     }
 
     /**
@@ -126,6 +112,7 @@ class Debtor extends Model
 
     /**
      * Get the total titipan attribute
+     * PERBAIKAN: Hitung total titipan yang masih aktif
      */
     public function getTotalTitipanAttribute()
     {
@@ -142,8 +129,6 @@ class Debtor extends Model
 
     /**
      * Get the saldo akhir attribute
-     * Saldo akhir = sama dengan current_balance (sudah termasuk titipan)
-     * Ini untuk kompatibilitas dengan kode yang sudah ada
      */
     public function getSaldoAkhirAttribute()
     {
@@ -152,6 +137,7 @@ class Debtor extends Model
 
     /**
      * Get the saldo pokok attribute
+     * PERBAIKAN: Akumulasi dari semua transaksi (piutang - pembayaran)
      */
     public function getSaldoPokokAttribute()
     {
@@ -163,7 +149,9 @@ class Debtor extends Model
             ->where('type', 'pembayaran')
             ->sum('bagi_pokok');
 
-        return $totalPembayaranPokok - $totalPiutangPokok;
+        $saldo = $totalPembayaranPokok - $totalPiutangPokok;
+
+        return $saldo;
     }
 
     /**
@@ -171,11 +159,19 @@ class Debtor extends Model
      */
     public function getFormattedSaldoPokokAttribute()
     {
-        return 'Rp ' . number_format($this->saldo_pokok, 0, ',', '.');
+        $saldo = $this->saldo_pokok;
+        $formatted = 'Rp ' . number_format(abs($saldo), 0, ',', '.');
+
+        if ($saldo < 0) {
+            return '-' . $formatted;
+        }
+
+        return $formatted;
     }
 
     /**
      * Get the saldo bagi hasil attribute
+     * PERBAIKAN: Akumulasi dari semua transaksi (piutang - pembayaran)
      */
     public function getSaldoBagiHasilAttribute()
     {
@@ -187,7 +183,9 @@ class Debtor extends Model
             ->where('type', 'pembayaran')
             ->sum('bagi_hasil');
 
-        return $totalPembayaranHasil - $totalPiutangHasil;
+        $saldo = $totalPembayaranHasil - $totalPiutangHasil;
+
+        return $saldo;
     }
 
     /**
@@ -195,17 +193,28 @@ class Debtor extends Model
      */
     public function getFormattedSaldoBagiHasilAttribute()
     {
-        return 'Rp ' . number_format($this->saldo_bagi_hasil, 0, ',', '.');
+        $saldo = $this->saldo_bagi_hasil;
+        $formatted = 'Rp ' . number_format(abs($saldo), 0, ',', '.');
+
+        if ($saldo < 0) {
+            return '-' . $formatted;
+        }
+
+        return $formatted;
     }
 
     /**
      * Get the debtor status attribute
+     * PERBAIKAN: Berdasarkan total saldo (transaksi + titipan)
      */
     public function getDebtorStatusAttribute()
     {
-        if ($this->current_balance > 0) {
+        $transactionBalance = $this->total_pembayaran - $this->total_piutang;
+        $totalBalance = $transactionBalance + $this->total_titipan;
+
+        if ($totalBalance > 0) {
             return 'lebih_bayar';
-        } elseif ($this->current_balance < 0) {
+        } elseif ($totalBalance < 0) {
             return 'belum_lunas';
         } else {
             return 'lunas';
@@ -214,12 +223,16 @@ class Debtor extends Model
 
     /**
      * Get the keterangan piutang attribute
+     * PERBAIKAN: Berdasarkan total saldo (transaksi + titipan)
      */
     public function getKeteranganPiutangAttribute()
     {
-        if ($this->current_balance > 0) {
+        $transactionBalance = $this->total_pembayaran - $this->total_piutang;
+        $totalBalance = $transactionBalance + $this->total_titipan;
+
+        if ($totalBalance > 0) {
             return 'Lebih bayar';
-        } elseif ($this->current_balance < 0) {
+        } elseif ($totalBalance < 0) {
             return 'Memiliki piutang';
         } else {
             return 'Lunas';
@@ -232,12 +245,20 @@ class Debtor extends Model
     public function getInitialBalanceWithTypeAttribute()
     {
         if ($this->initial_balance != 0) {
+            $types = explode(',', $this->initial_balance_type);
+            $typeLabel = implode(' + ', array_map(function ($t) {
+                return str_replace('_', ' ', ucfirst(trim($t)));
+            }, $types));
+
             return [
                 'amount' => $this->initial_balance,
                 'type' => $this->initial_balance_type,
+                'type_label' => $typeLabel,
                 'formatted' => 'Rp ' . number_format(abs($this->initial_balance), 0, ',', '.'),
                 'is_negative' => $this->initial_balance < 0,
-                'is_titipan' => $this->initial_balance > 0
+                'is_titipan' => $this->initial_balance > 0,
+                'pokok_amount' => $this->initial_pokok_balance ?? 0,
+                'bagi_hasil_amount' => $this->initial_bagi_hasil_balance ?? 0,
             ];
         }
 
@@ -246,6 +267,7 @@ class Debtor extends Model
 
     /**
      * Check if debtor has any titipan
+     * PERBAIKAN: Cek apakah ada titipan yang masih aktif
      */
     public function hasTitipan()
     {
@@ -254,7 +276,6 @@ class Debtor extends Model
 
     /**
      * Gunakan titipan untuk membayar piutang baru
-     * Method ini akan otomatis mengurangi titipan yang ada
      */
     public function useTitipanForNewPiutang($piutangAmount)
     {
@@ -271,14 +292,11 @@ class Debtor extends Model
         $usedTitipan = 0;
         $remainingPiutang = $piutangAmount;
 
-        // Gunakan titipan untuk membayar piutang
         if ($availableTitipan >= $piutangAmount) {
-            // Gunakan titipan sebanyak yang diperlukan
             $this->useTitipanAmount($piutangAmount, 'Digunakan untuk piutang baru');
             $usedTitipan = $piutangAmount;
             $remainingPiutang = 0;
         } else {
-            // Gunakan semua titipan yang tersedia
             $this->useAllTitipan('Digunakan untuk piutang baru');
             $usedTitipan = $availableTitipan;
             $remainingPiutang = $piutangAmount - $availableTitipan;
@@ -304,7 +322,6 @@ class Debtor extends Model
             if ($remaining <= 0) break;
 
             if ($titipan->amount >= $remaining) {
-                // Kurangi titipan
                 $titipan->amount -= $remaining;
                 $titipan->keterangan = $keterangan;
                 $titipan->save();
@@ -315,7 +332,6 @@ class Debtor extends Model
 
                 $remaining = 0;
             } else {
-                // Gunakan seluruh titipan
                 $remaining -= $titipan->amount;
                 $titipan->keterangan = $keterangan;
                 $titipan->delete();
