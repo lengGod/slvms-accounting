@@ -50,14 +50,18 @@
                                 <label class="form-label text-muted">Alamat</label>
                                 <p>{{ $debtor->address ?: '-' }}</p>
                             </div>
-                            <!-- Tambahkan informasi saldo awal -->
+                            <!-- Informasi saldo awal -->
                             <div class="col-12 mb-3">
                                 <label class="form-label text-muted">Saldo Awal</label>
                                 @if ($debtor->initial_balance_with_type)
                                     <div class="d-flex align-items-center">
                                         <p class="fw-medium mb-0">{{ $debtor->initial_balance_with_type['formatted'] }}</p>
-                                        <span class="badge bg-secondary ms-2">
-                                            {{ ucfirst(str_replace('_', ' ', $debtor->initial_balance_with_type['type'])) }}
+                                        <span
+                                            class="badge bg-{{ $debtor->initial_balance_with_type['is_negative'] ? 'danger' : 'success' }} ms-2">
+                                            {{ $debtor->initial_balance_with_type['is_negative'] ? 'Piutang' : 'Titipan' }}
+                                        </span>
+                                        <span class="badge bg-secondary ms-1">
+                                            {{ $debtor->initial_balance_with_type['type_label'] }}
                                         </span>
                                     </div>
                                 @else
@@ -85,8 +89,8 @@
                                         <th>Tanggal</th>
                                         <th>Keterangan</th>
                                         <th class="text-end">Jumlah</th>
-                                        <th class="text-end">Bagi Hasil</th>
                                         <th class="text-end">Bagi Pokok</th>
+                                        <th class="text-end">Bagi Hasil</th>
                                         <th class="text-center">Tipe</th>
                                     </tr>
                                 </thead>
@@ -95,13 +99,25 @@
                                         <tr>
                                             <td>{{ \Carbon\Carbon::parse($transaction->transaction_date)->format('d M Y') }}
                                             </td>
-                                            <td>{{ $transaction->description ?: '-' }}</td>
+                                            <td>
+                                                <small>
+                                                    @if ($transaction->description)
+                                                        {{ $transaction->description }}
+                                                        @if (strpos($transaction->description, 'Pembayaran menggunakan titipan') !== false)
+                                                            <br>
+                                                            <span class="badge bg-info">Menggunakan Titipan</span>
+                                                        @endif
+                                                    @else
+                                                        <span class="text-muted">-</span>
+                                                    @endif
+                                                </small>
+                                            </td>
                                             <td
                                                 class="text-end fw-medium {{ $transaction->type == 'piutang' ? 'text-danger' : 'text-success' }}">
                                                 {{ $transaction->formatted_amount }}
                                             </td>
-                                            <td class="text-end">{{ $transaction->formatted_bagi_hasil }}</td>
                                             <td class="text-end">{{ $transaction->formatted_bagi_pokok }}</td>
+                                            <td class="text-end">{{ $transaction->formatted_bagi_hasil }}</td>
                                             <td class="text-center">
                                                 <span
                                                     class="badge bg-{{ $transaction->type == 'piutang' ? 'info' : 'success' }}">
@@ -201,11 +217,11 @@
                                     <p class="fs-5 mb-0">{{ $debtor->initial_balance_with_type['formatted'] }}</p>
                                     <span
                                         class="badge bg-{{ $debtor->initial_balance_with_type['is_negative'] ? 'danger' : 'success' }} ms-2">
-                                        {{ ucfirst(str_replace('_', ' ', $debtor->initial_balance_with_type['type'])) }}
+                                        {{ $debtor->initial_balance_with_type['is_negative'] ? 'Piutang' : 'Titipan' }}
                                     </span>
-                                    @if ($debtor->initial_balance_with_type['is_titipan'])
-                                        <span class="badge bg-info ms-1">Titipan</span>
-                                    @endif
+                                    <span class="badge bg-secondary ms-1">
+                                        {{ $debtor->initial_balance_with_type['type_label'] }}
+                                    </span>
                                 </div>
                             @else
                                 <p class="fs-5">Rp 0</p>
@@ -222,11 +238,29 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted">Saldo Pokok</label>
-                            <p class="fs-5">{{ $debtor->formatted_saldo_pokok }}</p>
+                            <p class="fs-5 {{ $debtor->saldo_pokok < 0 ? 'text-danger' : 'text-success' }}">
+                                {{ $debtor->formatted_saldo_pokok }}
+                            </p>
+                            <small class="text-muted">
+                                @if ($debtor->saldo_pokok < 0)
+                                    (Piutang Pokok)
+                                @else
+                                    (Saldo Positif)
+                                @endif
+                            </small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted">Saldo Bagi Hasil</label>
-                            <p class="fs-5">{{ $debtor->formatted_saldo_bagi_hasil }}</p>
+                            <p class="fs-5 {{ $debtor->saldo_bagi_hasil < 0 ? 'text-danger' : 'text-success' }}">
+                                {{ $debtor->formatted_saldo_bagi_hasil }}
+                            </p>
+                            <small class="text-muted">
+                                @if ($debtor->saldo_bagi_hasil < 0)
+                                    (Piutang Bagi Hasil)
+                                @else
+                                    (Saldo Positif)
+                                @endif
+                            </small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted">Total Titipan</label>
@@ -235,15 +269,25 @@
                         <hr>
                         <div class="mb-3">
                             <label class="form-label text-muted">Saldo Saat Ini</label>
-                            <p class="fs-4 fw-bold {{ $debtor->current_balance < 0 ? 'text-danger' : 'text-success' }}">
+                            <p
+                                class="fs-4 fw-bold {{ $debtor->current_balance < 0 ? 'text-danger' : ($debtor->current_balance > 0 ? 'text-info' : 'text-success') }}">
                                 {{ $debtor->formatted_balance }}
                             </p>
+                            <small class="text-muted d-block">
+                                @if ($debtor->current_balance < 0)
+                                    = Total Piutang
+                                @elseif ($debtor->current_balance > 0)
+                                    = Total Titipan
+                                @else
+                                    = Lunas
+                                @endif
+                            </small>
                         </div>
                         <div>
                             <label class="form-label text-muted">Status</label>
                             <p>
                                 <span
-                                    class="badge bg-{{ $debtor->debtor_status == 'lunas' ? 'success' : ($debtor->debtor_status == 'belum_lunas' ? 'warning' : 'danger') }}">
+                                    class="badge bg-{{ $debtor->debtor_status == 'lunas' ? 'success' : ($debtor->debtor_status == 'belum_lunas' ? 'warning' : 'info') }}">
                                     {{ ucfirst(str_replace('_', ' ', $debtor->debtor_status)) }}
                                 </span>
                             </p>
@@ -255,10 +299,7 @@
                                 @if ($debtor->initial_balance_with_type && $debtor->initial_balance_with_type['amount'] > 0)
                                     <br><small class="text-muted">Saldo awal:
                                         {{ $debtor->initial_balance_with_type['formatted'] }}
-                                        ({{ ucfirst(str_replace('_', ' ', $debtor->initial_balance_with_type['type'])) }})</small>
-                                    @if ($debtor->initial_balance_with_type['is_titipan'])
-                                        <br><small class="text-info">Saldo awal positif tersimpan sebagai titipan</small>
-                                    @endif
+                                        ({{ $debtor->initial_balance_with_type['is_negative'] ? 'Piutang' : 'Titipan' }})</small>
                                 @endif
                             </p>
                         </div>

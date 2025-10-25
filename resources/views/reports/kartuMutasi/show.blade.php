@@ -51,10 +51,18 @@
                             <tr>
                                 <td style="width: 150px;"><strong>Saldo Awal</strong></td>
                                 <td>
-                                    {{ $debtor->formatted_initial_balance }}
-                                    <span class="badge bg-info ms-2">
-                                        {{ $debtor->initial_balance_type == 'pokok' ? 'Pokok' : 'Bagi Hasil' }}
-                                    </span>
+                                    @if ($debtor->initial_balance_with_type)
+                                        {{ $debtor->initial_balance_with_type['formatted'] }}
+                                        <span
+                                            class="badge bg-{{ $debtor->initial_balance_with_type['is_negative'] ? 'danger' : 'success' }} ms-2">
+                                            {{ $debtor->initial_balance_with_type['is_negative'] ? 'Piutang' : 'Titipan' }}
+                                        </span>
+                                        <span class="badge bg-secondary ms-1">
+                                            {{ $debtor->initial_balance_with_type['type_label'] }}
+                                        </span>
+                                    @else
+                                        Rp 0
+                                    @endif
                                 </td>
                             </tr>
                             <tr>
@@ -113,7 +121,7 @@
             <div class="card-body">
                 <h5 class="card-title mb-4">Detail Transaksi</h5>
                 <div class="table-responsive" id="print-content">
-                    <table class="table table-bordered">
+                    <table class="table table-bordered text-center">
                         <thead class="table-light">
                             <tr>
                                 <th>ID Transaksi</th>
@@ -143,9 +151,16 @@
                         </thead>
                         <tbody>
                             <?php
-                            $saldoPokok = $debtor->initial_balance_type == 'pokok' ? $debtor->initial_balance : 0;
-                            $saldoBagiHasil = $debtor->initial_balance_type == 'bagi_hasil' ? $debtor->initial_balance : 0;
-                            $saldoTotal = $debtor->initial_balance;
+                            // PERBAIKAN: Ambil saldo awal dari initial_balance_with_type
+                            $saldoPokok = 0;
+                            $saldoBagiHasil = 0;
+                            $saldoTotal = 0;
+                            
+                            if ($debtor->initial_balance_with_type) {
+                                $saldoPokok = $debtor->initial_balance_with_type['pokok_amount'] ?? 0;
+                                $saldoBagiHasil = $debtor->initial_balance_with_type['bagi_hasil_amount'] ?? 0;
+                                $saldoTotal = $debtor->initial_balance_with_type['amount'];
+                            }
                             ?>
                             @foreach ($debtor->transactions as $transaction)
                                 <tr>

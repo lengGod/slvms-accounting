@@ -69,9 +69,14 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td>{{ $debtor->formatted_saldo_pokok }}</td>
-                                    <td>{{ $debtor->formatted_saldo_bagi_hasil }}</td>
-                                    <td class="{{ $debtor->current_balance < 0 ? 'text-danger' : 'text-success' }}">
+                                    <td class="{{ $debtor->saldo_pokok < 0 ? 'text-danger' : 'text-success' }}">
+                                        {{ $debtor->formatted_saldo_pokok }}
+                                    </td>
+                                    <td class="{{ $debtor->saldo_bagi_hasil < 0 ? 'text-danger' : 'text-success' }}">
+                                        {{ $debtor->formatted_saldo_bagi_hasil }}
+                                    </td>
+                                    <td
+                                        class="{{ $debtor->current_balance < 0 ? 'text-danger' : ($debtor->current_balance > 0 ? 'text-info' : 'text-success') }}">
                                         {{ $debtor->formatted_balance }}
                                     </td>
                                     <td>
