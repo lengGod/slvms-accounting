@@ -51,14 +51,19 @@
                                 <label class="form-label text-muted">Alamat</label>
                                 <p><?php echo e($debtor->address ?: '-'); ?></p>
                             </div>
-                            <!-- Tambahkan informasi saldo awal -->
+                            <!-- Informasi saldo awal -->
                             <div class="col-12 mb-3">
                                 <label class="form-label text-muted">Saldo Awal</label>
                                 <?php if($debtor->initial_balance_with_type): ?>
                                     <div class="d-flex align-items-center">
                                         <p class="fw-medium mb-0"><?php echo e($debtor->initial_balance_with_type['formatted']); ?></p>
-                                        <span class="badge bg-secondary ms-2">
-                                            <?php echo e(ucfirst(str_replace('_', ' ', $debtor->initial_balance_with_type['type']))); ?>
+                                        <span
+                                            class="badge bg-<?php echo e($debtor->initial_balance_with_type['is_negative'] ? 'danger' : 'success'); ?> ms-2">
+                                            <?php echo e($debtor->initial_balance_with_type['is_negative'] ? 'Piutang' : 'Titipan'); ?>
+
+                                        </span>
+                                        <span class="badge bg-secondary ms-1">
+                                            <?php echo e($debtor->initial_balance_with_type['type_label']); ?>
 
                                         </span>
                                     </div>
@@ -87,8 +92,8 @@
                                         <th>Tanggal</th>
                                         <th>Keterangan</th>
                                         <th class="text-end">Jumlah</th>
-                                        <th class="text-end">Bagi Hasil</th>
                                         <th class="text-end">Bagi Pokok</th>
+                                        <th class="text-end">Bagi Hasil</th>
                                         <th class="text-center">Tipe</th>
                                     </tr>
                                 </thead>
@@ -98,14 +103,27 @@
                                             <td><?php echo e(\Carbon\Carbon::parse($transaction->transaction_date)->format('d M Y')); ?>
 
                                             </td>
-                                            <td><?php echo e($transaction->description ?: '-'); ?></td>
+                                            <td>
+                                                <small>
+                                                    <?php if($transaction->description): ?>
+                                                        <?php echo e($transaction->description); ?>
+
+                                                        <?php if(strpos($transaction->description, 'Pembayaran menggunakan titipan') !== false): ?>
+                                                            <br>
+                                                            <span class="badge bg-info">Menggunakan Titipan</span>
+                                                        <?php endif; ?>
+                                                    <?php else: ?>
+                                                        <span class="text-muted">-</span>
+                                                    <?php endif; ?>
+                                                </small>
+                                            </td>
                                             <td
                                                 class="text-end fw-medium <?php echo e($transaction->type == 'piutang' ? 'text-danger' : 'text-success'); ?>">
                                                 <?php echo e($transaction->formatted_amount); ?>
 
                                             </td>
-                                            <td class="text-end"><?php echo e($transaction->formatted_bagi_hasil); ?></td>
                                             <td class="text-end"><?php echo e($transaction->formatted_bagi_pokok); ?></td>
+                                            <td class="text-end"><?php echo e($transaction->formatted_bagi_hasil); ?></td>
                                             <td class="text-center">
                                                 <span
                                                     class="badge bg-<?php echo e($transaction->type == 'piutang' ? 'info' : 'success'); ?>">
@@ -208,12 +226,13 @@
                                     <p class="fs-5 mb-0"><?php echo e($debtor->initial_balance_with_type['formatted']); ?></p>
                                     <span
                                         class="badge bg-<?php echo e($debtor->initial_balance_with_type['is_negative'] ? 'danger' : 'success'); ?> ms-2">
-                                        <?php echo e(ucfirst(str_replace('_', ' ', $debtor->initial_balance_with_type['type']))); ?>
+                                        <?php echo e($debtor->initial_balance_with_type['is_negative'] ? 'Piutang' : 'Titipan'); ?>
 
                                     </span>
-                                    <?php if($debtor->initial_balance_with_type['is_titipan']): ?>
-                                        <span class="badge bg-info ms-1">Titipan</span>
-                                    <?php endif; ?>
+                                    <span class="badge bg-secondary ms-1">
+                                        <?php echo e($debtor->initial_balance_with_type['type_label']); ?>
+
+                                    </span>
                                 </div>
                             <?php else: ?>
                                 <p class="fs-5">Rp 0</p>
@@ -231,11 +250,31 @@
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted">Saldo Pokok</label>
-                            <p class="fs-5"><?php echo e($debtor->formatted_saldo_pokok); ?></p>
+                            <p class="fs-5 <?php echo e($debtor->saldo_pokok < 0 ? 'text-danger' : 'text-success'); ?>">
+                                <?php echo e($debtor->formatted_saldo_pokok); ?>
+
+                            </p>
+                            <small class="text-muted">
+                                <?php if($debtor->saldo_pokok < 0): ?>
+                                    (Piutang Pokok)
+                                <?php else: ?>
+                                    (Saldo Positif)
+                                <?php endif; ?>
+                            </small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted">Saldo Bagi Hasil</label>
-                            <p class="fs-5"><?php echo e($debtor->formatted_saldo_bagi_hasil); ?></p>
+                            <p class="fs-5 <?php echo e($debtor->saldo_bagi_hasil < 0 ? 'text-danger' : 'text-success'); ?>">
+                                <?php echo e($debtor->formatted_saldo_bagi_hasil); ?>
+
+                            </p>
+                            <small class="text-muted">
+                                <?php if($debtor->saldo_bagi_hasil < 0): ?>
+                                    (Piutang Bagi Hasil)
+                                <?php else: ?>
+                                    (Saldo Positif)
+                                <?php endif; ?>
+                            </small>
                         </div>
                         <div class="mb-3">
                             <label class="form-label text-muted">Total Titipan</label>
@@ -244,16 +283,26 @@
                         <hr>
                         <div class="mb-3">
                             <label class="form-label text-muted">Saldo Saat Ini</label>
-                            <p class="fs-4 fw-bold <?php echo e($debtor->current_balance < 0 ? 'text-danger' : 'text-success'); ?>">
+                            <p
+                                class="fs-4 fw-bold <?php echo e($debtor->current_balance < 0 ? 'text-danger' : ($debtor->current_balance > 0 ? 'text-info' : 'text-success')); ?>">
                                 <?php echo e($debtor->formatted_balance); ?>
 
                             </p>
+                            <small class="text-muted d-block">
+                                <?php if($debtor->current_balance < 0): ?>
+                                    = Total Piutang
+                                <?php elseif($debtor->current_balance > 0): ?>
+                                    = Total Titipan
+                                <?php else: ?>
+                                    = Lunas
+                                <?php endif; ?>
+                            </small>
                         </div>
                         <div>
                             <label class="form-label text-muted">Status</label>
                             <p>
                                 <span
-                                    class="badge bg-<?php echo e($debtor->debtor_status == 'lunas' ? 'success' : ($debtor->debtor_status == 'belum_lunas' ? 'warning' : 'danger')); ?>">
+                                    class="badge bg-<?php echo e($debtor->debtor_status == 'lunas' ? 'success' : ($debtor->debtor_status == 'belum_lunas' ? 'warning' : 'info')); ?>">
                                     <?php echo e(ucfirst(str_replace('_', ' ', $debtor->debtor_status))); ?>
 
                                 </span>
@@ -268,10 +317,7 @@
                                     <br><small class="text-muted">Saldo awal:
                                         <?php echo e($debtor->initial_balance_with_type['formatted']); ?>
 
-                                        (<?php echo e(ucfirst(str_replace('_', ' ', $debtor->initial_balance_with_type['type']))); ?>)</small>
-                                    <?php if($debtor->initial_balance_with_type['is_titipan']): ?>
-                                        <br><small class="text-info">Saldo awal positif tersimpan sebagai titipan</small>
-                                    <?php endif; ?>
+                                        (<?php echo e($debtor->initial_balance_with_type['is_negative'] ? 'Piutang' : 'Titipan'); ?>)</small>
                                 <?php endif; ?>
                             </p>
                         </div>

@@ -69,9 +69,16 @@
                                             </div>
                                         </div>
                                     </td>
-                                    <td><?php echo e($debtor->formatted_saldo_pokok); ?></td>
-                                    <td><?php echo e($debtor->formatted_saldo_bagi_hasil); ?></td>
-                                    <td class="<?php echo e($debtor->current_balance < 0 ? 'text-danger' : 'text-success'); ?>">
+                                    <td class="<?php echo e($debtor->saldo_pokok < 0 ? 'text-danger' : 'text-success'); ?>">
+                                        <?php echo e($debtor->formatted_saldo_pokok); ?>
+
+                                    </td>
+                                    <td class="<?php echo e($debtor->saldo_bagi_hasil < 0 ? 'text-danger' : 'text-success'); ?>">
+                                        <?php echo e($debtor->formatted_saldo_bagi_hasil); ?>
+
+                                    </td>
+                                    <td
+                                        class="<?php echo e($debtor->current_balance < 0 ? 'text-danger' : ($debtor->current_balance > 0 ? 'text-info' : 'text-success')); ?>">
                                         <?php echo e($debtor->formatted_balance); ?>
 
                                     </td>

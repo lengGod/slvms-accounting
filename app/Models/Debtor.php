@@ -137,7 +137,8 @@ class Debtor extends Model
 
     /**
      * Get the saldo pokok attribute
-     * PERBAIKAN: Akumulasi dari semua transaksi (piutang - pembayaran)
+     * PERBAIKAN: Akumulasi total dari semua riwayat transaksi debitur
+     * (piutang pokok - pembayaran pokok)
      */
     public function getSaldoPokokAttribute()
     {
@@ -149,9 +150,9 @@ class Debtor extends Model
             ->where('type', 'pembayaran')
             ->sum('bagi_pokok');
 
-        $saldo = $totalPembayaranPokok - $totalPiutangPokok;
-
-        return $saldo;
+        // Akumulasi total: piutang pokok - pembayaran pokok
+        // Hasil positif = piutang, hasil negatif = lebih bayar
+        return $totalPiutangPokok - $totalPembayaranPokok;
     }
 
     /**
@@ -171,7 +172,8 @@ class Debtor extends Model
 
     /**
      * Get the saldo bagi hasil attribute
-     * PERBAIKAN: Akumulasi dari semua transaksi (piutang - pembayaran)
+     * PERBAIKAN: Akumulasi total dari semua riwayat transaksi debitur
+     * (piutang bagi hasil - pembayaran bagi hasil)
      */
     public function getSaldoBagiHasilAttribute()
     {
@@ -183,9 +185,9 @@ class Debtor extends Model
             ->where('type', 'pembayaran')
             ->sum('bagi_hasil');
 
-        $saldo = $totalPembayaranHasil - $totalPiutangHasil;
-
-        return $saldo;
+        // Akumulasi total: piutang bagi hasil - pembayaran bagi hasil
+        // Hasil positif = piutang, hasil negatif = lebih bayar
+        return $totalPiutangHasil - $totalPembayaranHasil;
     }
 
     /**
