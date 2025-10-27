@@ -41,7 +41,7 @@
         <div class="col-md-3">
             <div class="card shadow-sm border-0 bg-info text-white h-100">
                 <div class="card-body d-flex flex-column justify-content-start align-items-start text-center">
-                    <h6 class="card-title mb-2">Total Saldo</h6>
+                    <h6 class="card-title mb-2">Total Saldo Titipan</h6>
                     <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalSaldo, 0, ',', '.') }}</p>
                 </div>
             </div>
@@ -51,7 +51,7 @@
     {{-- Aktivitas Terbaru --}}
     <div class="card shadow-sm border-0">
         <div class="card-header bg-white border-bottom">
-            <h5 class="mb-0">Aktivitas Terbaru</h5>
+            <h5 class="mb-0">Aktivitas Transaksi Terbaru</h5>
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -62,7 +62,6 @@
                             <th>Tanggal</th>
                             <th class="text-end">Jumlah</th>
                             <th class="text-center">Tipe</th>
-                            <th class="text-center">Status</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -91,20 +90,10 @@
                                         {{ ucfirst($activity->type) }}
                                     </span>
                                 </td>
-                                <td class="text-center">
-                                    <span
-                                        class="badge rounded-pill 
-                                        @if ($activity->status === 'lunas') bg-success text-white
-                                        @elseif($activity->status === 'belum lunas') bg-warning text-dark
-                                        @elseif($activity->status === 'jatuh tempo') bg-danger text-white
-                                        @else bg-secondary text-white @endif">
-                                        {{ ucfirst($activity->status) }}
-                                    </span>
-                                </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="5" class="text-center py-4 text-muted">Belum ada aktivitas terbaru</td>
+                                <td colspan="4" class="text-center py-4 text-muted">Belum ada aktivitas terbaru</td>
                             </tr>
                         @endforelse
                     </tbody>

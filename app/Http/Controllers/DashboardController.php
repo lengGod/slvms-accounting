@@ -10,44 +10,32 @@ class DashboardController extends Controller
 {
     public function index()
     {
+        // Total Debitur
         $totalDebtors = Debtor::count();
-        $totalPiutang = Transaction::tipe('piutang')->sum('amount');
-        $totalPembayaran = Transaction::tipe('pembayaran')->sum('amount');
 
-        // Hitung saldo dinamis dari accessor
-        $totalSaldo = Debtor::with('transactions')->get()->sum(function ($debtor) {
+        // Total Piutang (semua transaksi tipe piutang)
+        $totalPiutang = Transaction::where('type', 'piutang')->sum('amount');
+
+        // Total Pembayaran (semua transaksi tipe pembayaran)
+        $totalPembayaran = Transaction::where('type', 'pembayaran')->sum('amount');
+
+        // Total Saldo (menghitung saldo dinamis dari accessor di model Debtor)
+        $totalSaldo = Debtor::with('transactions', 'titipans')->get()->sum(function ($debtor) {
             return $debtor->current_balance;
         });
 
+        // Aktivitas Terbaru (5 transaksi terakhir)
         $latestActivities = Transaction::with(['debtor', 'user'])
             ->orderByDesc('transaction_date')
             ->take(5)
             ->get();
-
-        $year = Carbon::now()->year;
-
-        $piutangPerBulan = Transaction::tipe('piutang')
-            ->whereYear('transaction_date', $year)
-            ->selectRaw('MONTH(transaction_date) as month, SUM(amount) as total')
-            ->groupBy('month')
-            ->pluck('total', 'month')
-            ->toArray();
-
-        $pembayaranPerBulan = Transaction::tipe('pembayaran')
-            ->whereYear('transaction_date', $year)
-            ->selectRaw('MONTH(transaction_date) as month, SUM(amount) as total')
-            ->groupBy('month')
-            ->pluck('total', 'month')
-            ->toArray();
 
         return view('dashboard', compact(
             'totalDebtors',
             'totalPiutang',
             'totalPembayaran',
             'totalSaldo',
-            'latestActivities',
-            'piutangPerBulan',
-            'pembayaranPerBulan'
+            'latestActivities'
         ));
     }
 }
