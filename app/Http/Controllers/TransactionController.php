@@ -125,44 +125,43 @@ class TransactionController extends Controller
             $piutangAmount = $validated['amount'];
             $availableTitipan = $debtor->total_titipan;
 
-            // Hitung berapa titipan yang akan digunakan
             $usedTitipan = min($availableTitipan, $piutangAmount);
             $remainingPiutang = $piutangAmount - $usedTitipan;
 
-            // Buat deskripsi yang menunjukkan penggunaan titipan
-            $description = $validated['description'] ?? '';
+            // Kurangi titipan yang digunakan
             if ($usedTitipan > 0) {
-                $description .= ($description ? ' | ' : '') .
-                    'Pembayaran menggunakan titipan: Rp ' . number_format($usedTitipan, 0, ',', '.');
+                $debtor->useTitipanAmount($usedTitipan, 'Digunakan untuk piutang baru: ' . ($validated['description'] ?? 'Piutang baru'));
             }
 
-            // Buat 1 transaksi piutang saja dengan keterangan lengkap
-            $transaction = Transaction::create([
-                'debtor_id' => $validated['debtor_id'],
-                'type' => 'piutang',
-                'amount' => $piutangAmount,
-                'bagi_hasil' => $validated['bagi_hasil'] ?? 0,
-                'bagi_pokok' => $validated['bagi_pokok'] ?? 0,
-                'transaction_date' => $validated['transaction_date'],
-                'description' => $description,
-                'user_id' => auth()->id(),
-            ]);
+            // Jika ada sisa piutang, buat transaksi piutang untuk sisanya
+            if ($remainingPiutang > 0) {
+                $pokokAmount = $validated['bagi_pokok'] ?? 0;
+                $hasilAmount = $validated['bagi_hasil'] ?? 0;
 
-            // Kurangi/hapus titipan yang digunakan
-            if ($usedTitipan > 0) {
-                $debtor->useTitipanForNewPiutang($usedTitipan);
+                // Prorate sisa alokasi
+                $remainingPokok = $pokokAmount * ($remainingPiutang / $piutangAmount);
+                $remainingHasil = $hasilAmount * ($remainingPiutang / $piutangAmount);
+
+                Transaction::create([
+                    'debtor_id' => $validated['debtor_id'],
+                    'type' => 'piutang',
+                    'amount' => -$remainingPiutang,
+                    'bagi_pokok' => -$remainingPokok,
+                    'bagi_hasil' => -$remainingHasil,
+                    'transaction_date' => $validated['transaction_date'],
+                    'description' => 'Sisa piutang setelah menggunakan titipan: ' . ($validated['description'] ?? 'Piutang baru'),
+                    'user_id' => auth()->id(),
+                ]);
             }
 
             DB::commit();
 
-            $message = 'Piutang berhasil ditambahkan. ';
-            if ($usedTitipan > 0) {
-                $message .= 'Menggunakan titipan sebesar Rp ' . number_format($usedTitipan, 0, ',', '.') . '. ';
-            }
+            $message = 'Proses piutang dengan titipan berhasil. ';
+            $message .= 'Titipan digunakan: Rp ' . number_format($usedTitipan, 0, ',', '.') . '. ';
             if ($remainingPiutang > 0) {
-                $message .= 'Sisa piutang yang belum dibayar: Rp ' . number_format($remainingPiutang, 0, ',', '.');
+                $message .= 'Sisa piutang: Rp ' . number_format($remainingPiutang, 0, ',', '.');
             } else {
-                $message .= 'Piutang sudah lunas dengan titipan.';
+                $message .= 'Seluruh piutang telah ditutupi oleh titipan.';
             }
 
             return redirect()->route('transactions.index')->with('success', $message);
@@ -181,9 +180,9 @@ class TransactionController extends Controller
         $validated = $request->validate([
             'debtor_id' => 'required|exists:debtors,id',
             'type' => 'required|in:piutang,pembayaran',
-            'amount' => 'required|numeric|min:0',
-            'bagi_hasil' => 'nullable|numeric|min:0',
-            'bagi_pokok' => 'nullable|numeric|min:0',
+            'amount' => 'required|numeric',
+            'bagi_hasil' => 'nullable|numeric',
+            'bagi_pokok' => 'nullable|numeric',
             'transaction_date' => 'required|date',
             'description' => 'nullable|string|max:255',
         ]);
@@ -192,6 +191,14 @@ class TransactionController extends Controller
 
         // Jika transaksi adalah piutang
         if ($validated['type'] === 'piutang') {
+            $validated['amount'] *= -1;
+            if (isset($validated['bagi_pokok'])) {
+                $validated['bagi_pokok'] *= -1;
+            }
+            if (isset($validated['bagi_hasil'])) {
+                $validated['bagi_hasil'] *= -1;
+            }
+
             $debtor = Debtor::find($validated['debtor_id']);
 
             // Cek apakah debitur memiliki titipan
@@ -199,9 +206,9 @@ class TransactionController extends Controller
                 // Redirect ke halaman konfirmasi penggunaan titipan
                 return redirect()->route('transactions.createWithTitipanConfirmation', [
                     'debtor_id' => $validated['debtor_id'],
-                    'amount' => $validated['amount'],
-                    'bagi_hasil' => $validated['bagi_hasil'] ?? 0,
-                    'bagi_pokok' => $validated['bagi_pokok'] ?? 0,
+                    'amount' => abs($validated['amount']),
+                    'bagi_hasil' => isset($validated['bagi_hasil']) ? abs($validated['bagi_hasil']) : 0,
+                    'bagi_pokok' => isset($validated['bagi_pokok']) ? abs($validated['bagi_pokok']) : 0,
                     'transaction_date' => $validated['transaction_date'],
                     'description' => $validated['description'] ?? '',
                 ]);
@@ -227,11 +234,13 @@ class TransactionController extends Controller
             $sisaPiutangReal = max(0, $sisaPiutangTransactional - $debtor->total_titipan);
 
             // Fungsi bantuan untuk menambah/memperbarui titipan
-            $add_to_titipan = function ($amount, $keterangan) use ($debtor, $validated) {
+            $add_to_titipan = function ($amount, $keterangan, $bagiPokok, $bagiHasil) use ($debtor, $validated) {
                 $existingTitipan = $debtor->titipans()->latest()->first();
                 if ($existingTitipan) {
                     $existingTitipan->update([
                         'amount' => $existingTitipan->amount + $amount,
+                        'bagi_pokok' => $existingTitipan->bagi_pokok + $bagiPokok,
+                        'bagi_hasil' => $existingTitipan->bagi_hasil + $bagiHasil,
                         'keterangan' => $keterangan,
                         'tanggal' => $validated['transaction_date'],
                     ]);
@@ -239,6 +248,8 @@ class TransactionController extends Controller
                     Titipan::create([
                         'debtor_id' => $debtor->id,
                         'amount' => $amount,
+                        'bagi_pokok' => $bagiPokok,
+                        'bagi_hasil' => $bagiHasil,
                         'tanggal' => $validated['transaction_date'],
                         'keterangan' => $keterangan,
                         'user_id' => auth()->id(),
@@ -250,11 +261,9 @@ class TransactionController extends Controller
             if ($sisaPiutangReal <= 0) {
                 DB::beginTransaction();
                 try {
-                    $pembayaran = Transaction::create($validated); // Catat transaksi pembayaran
-
-                    // Tambahkan jumlah pembayaran ke titipan
-                    $keterangan = 'Pembayaran menjadi titipan (Transaksi #' . $pembayaran->id . ')';
-                    $add_to_titipan($validated['amount'], $keterangan);
+                    // Langsung tambahkan ke titipan tanpa membuat transaksi pembayaran
+                    $keterangan = 'Pembayaran langsung menjadi titipan';
+                    $add_to_titipan($validated['amount'], $keterangan, $bagiPokok, $bagiHasil);
 
                     DB::commit();
                     return redirect()->route('transactions.index')->with('success', 'Pembayaran berhasil. Karena piutang sudah lunas, pembayaran disimpan sebagai titipan.');
@@ -269,19 +278,25 @@ class TransactionController extends Controller
             if ($sisaPiutangReal > 0 && $validated['amount'] > $sisaPiutangReal) {
                 $kelebihan = $validated['amount'] - $sisaPiutangReal;
 
+                $allocatedHasil = min($bagiHasil, $sisaPiutangReal);
+                $allocatedPokok = min($bagiPokok, $sisaPiutangReal - $allocatedHasil);
+
+                $titipanHasil = $bagiHasil - $allocatedHasil;
+                $titipanPokok = $bagiPokok - $allocatedPokok;
+
                 DB::beginTransaction();
                 try {
                     // Buat transaksi pembayaran hanya sebesar sisa piutang nyata
                     $pembayaran = Transaction::create(array_merge($validated, [
                         'amount' => $sisaPiutangReal,
                         'description' => $validated['description'] ?? 'Pembayaran pelunasan sisa piutang',
-                        'bagi_hasil' => min($bagiHasil, $sisaPiutangReal),
-                        'bagi_pokok' => min($bagiPokok, $sisaPiutangReal - min($bagiHasil, $sisaPiutangReal)),
+                        'bagi_hasil' => $allocatedHasil,
+                        'bagi_pokok' => $allocatedPokok,
                     ]));
 
                     // Tambahkan kelebihan pembayaran ke titipan
                     $keterangan = 'Kelebihan pembayaran (Transaksi #' . $pembayaran->id . ')';
-                    $add_to_titipan($kelebihan, $keterangan);
+                    $add_to_titipan($kelebihan, $keterangan, $titipanPokok, $titipanHasil);
 
                     DB::commit();
                     return redirect()->route('transactions.index')->with('success', 'Pembayaran berhasil. Piutang lunas dan kelebihan pembayaran disimpan sebagai titipan.');
@@ -326,14 +341,24 @@ class TransactionController extends Controller
         $validated = $request->validate([
             'debtor_id' => 'required|exists:debtors,id',
             'type' => 'required|in:piutang,pembayaran',
-            'amount' => 'required|numeric|min:0',
-            'bagi_hasil' => 'nullable|numeric|min:0',
-            'bagi_pokok' => 'nullable|numeric|min:0',
+            'amount' => 'required|numeric',
+            'bagi_hasil' => 'nullable|numeric',
+            'bagi_pokok' => 'nullable|numeric',
             'transaction_date' => 'required|date',
             'description' => 'nullable|string|max:255',
         ]);
 
         $validated['user_id'] = auth()->id();
+
+        if ($validated['type'] === 'piutang') {
+            $validated['amount'] *= -1;
+            if (isset($validated['bagi_pokok'])) {
+                $validated['bagi_pokok'] *= -1;
+            }
+            if (isset($validated['bagi_hasil'])) {
+                $validated['bagi_hasil'] *= -1;
+            }
+        }
 
         // Validasi alokasi hanya untuk pembayaran
         if ($validated['type'] === 'pembayaran') {

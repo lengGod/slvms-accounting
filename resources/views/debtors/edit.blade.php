@@ -288,7 +288,7 @@
                         if (totalAmount < 0) {
                             previewInfo.innerHTML =
                                 `<i class="bi bi-arrow-down-circle-fill text-danger me-1"></i>
-                                Piutang: Pokok ${formatCurrency(Math.abs(pokokAmount))} + Bagi Hasil ${formatCurrency(Math.abs(bagiHasilAmount))}`;
+                                Piutang: Pokok ${formatCurrency(pokokAmount)} + Bagi Hasil ${formatCurrency(bagiHasilAmount)}`;
                         } else {
                             previewInfo.innerHTML =
                                 `<i class="bi bi-arrow-up-circle-fill text-success me-1"></i>
@@ -298,7 +298,7 @@
                         if (totalAmount < 0) {
                             previewInfo.innerHTML =
                             `<i class="bi bi-arrow-down-circle-fill text-danger me-1"></i>
-                                Debitur memiliki piutang ${typeNames} sebesar ${formatCurrency(Math.abs(totalAmount))}`;
+                                Debitur memiliki piutang ${typeNames} sebesar ${formatCurrency(totalAmount)}`;
                         } else {
                             previewInfo.innerHTML = `<i class="bi bi-arrow-up-circle-fill text-success me-1"></i>
                                 Kita memiliki titipan ${typeNames} sebesar ${formatCurrency(totalAmount)}`;

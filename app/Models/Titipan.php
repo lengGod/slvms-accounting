@@ -15,6 +15,8 @@ class Titipan extends Model
         'tanggal',
         'keterangan',
         'user_id',
+        'bagi_pokok',
+        'bagi_hasil',
     ];
 
     protected $casts = [

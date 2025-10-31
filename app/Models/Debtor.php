@@ -62,8 +62,7 @@ class Debtor extends Model
      */
     public function getCurrentBalanceAttribute()
     {
-        // Hitung total titipan yang masih aktif (belum digunakan)
-        return $this->titipans()->sum('amount');
+        return $this->saldo_pokok + $this->saldo_bagi_hasil;
     }
 
     /**
@@ -142,17 +141,7 @@ class Debtor extends Model
      */
     public function getSaldoPokokAttribute()
     {
-        $totalPiutangPokok = $this->transactions()
-            ->where('type', 'piutang')
-            ->sum('bagi_pokok');
-
-        $totalPembayaranPokok = $this->transactions()
-            ->where('type', 'pembayaran')
-            ->sum('bagi_pokok');
-
-        // Akumulasi total: piutang pokok - pembayaran pokok
-        // Hasil positif = piutang, hasil negatif = lebih bayar
-        return $totalPiutangPokok - $totalPembayaranPokok;
+        return $this->transactions()->sum('bagi_pokok') + $this->titipans()->sum('bagi_pokok');
     }
 
     /**
@@ -160,14 +149,7 @@ class Debtor extends Model
      */
     public function getFormattedSaldoPokokAttribute()
     {
-        $saldo = $this->saldo_pokok;
-        $formatted = 'Rp ' . number_format(abs($saldo), 0, ',', '.');
-
-        if ($saldo < 0) {
-            return '-' . $formatted;
-        }
-
-        return $formatted;
+        return 'Rp ' . number_format($this->saldo_pokok, 0, ',', '.');
     }
 
     /**
@@ -177,17 +159,7 @@ class Debtor extends Model
      */
     public function getSaldoBagiHasilAttribute()
     {
-        $totalPiutangHasil = $this->transactions()
-            ->where('type', 'piutang')
-            ->sum('bagi_hasil');
-
-        $totalPembayaranHasil = $this->transactions()
-            ->where('type', 'pembayaran')
-            ->sum('bagi_hasil');
-
-        // Akumulasi total: piutang bagi hasil - pembayaran bagi hasil
-        // Hasil positif = piutang, hasil negatif = lebih bayar
-        return $totalPiutangHasil - $totalPembayaranHasil;
+        return $this->transactions()->sum('bagi_hasil') + $this->titipans()->sum('bagi_hasil');
     }
 
     /**
@@ -195,14 +167,7 @@ class Debtor extends Model
      */
     public function getFormattedSaldoBagiHasilAttribute()
     {
-        $saldo = $this->saldo_bagi_hasil;
-        $formatted = 'Rp ' . number_format(abs($saldo), 0, ',', '.');
-
-        if ($saldo < 0) {
-            return '-' . $formatted;
-        }
-
-        return $formatted;
+        return 'Rp ' . number_format($this->saldo_bagi_hasil, 0, ',', '.');
     }
 
     /**
@@ -211,13 +176,12 @@ class Debtor extends Model
      */
     public function getDebtorStatusAttribute()
     {
-        $transactionBalance = $this->total_pembayaran - $this->total_piutang;
-        $totalBalance = $transactionBalance + $this->total_titipan;
+        $balance = $this->current_balance;
 
-        if ($totalBalance > 0) {
-            return 'lebih_bayar';
-        } elseif ($totalBalance < 0) {
+        if ($balance < 0) {
             return 'belum_lunas';
+        } elseif ($balance > 0) {
+            return 'Titipan';
         } else {
             return 'lunas';
         }
@@ -229,13 +193,12 @@ class Debtor extends Model
      */
     public function getKeteranganPiutangAttribute()
     {
-        $transactionBalance = $this->total_pembayaran - $this->total_piutang;
-        $totalBalance = $transactionBalance + $this->total_titipan;
+        $balance = $this->current_balance;
 
-        if ($totalBalance > 0) {
-            return 'Lebih bayar';
-        } elseif ($totalBalance < 0) {
+        if ($balance < 0) {
             return 'Memiliki piutang';
+        } elseif ($balance > 0) {
+            return 'Memiliki Titipan';
         } else {
             return 'Lunas';
         }
@@ -317,27 +280,31 @@ class Debtor extends Model
      */
     private function useTitipanAmount($amount, $keterangan)
     {
-        $titipans = $this->titipans()->oldest()->get();
-        $remaining = $amount;
+        $titipans = $this->titipans()->where('amount', '>', 0)->oldest()->get();
+        $remainingToUse = $amount;
 
         foreach ($titipans as $titipan) {
-            if ($remaining <= 0) break;
+            if ($remainingToUse <= 0) break;
 
-            if ($titipan->amount >= $remaining) {
-                $titipan->amount -= $remaining;
+            $amountToUseFromThis = min($remainingToUse, $titipan->amount);
+
+            if ($titipan->amount > 0) {
+                $pokokProportion = $titipan->bagi_pokok / $titipan->amount;
+                $hasilProportion = $titipan->bagi_hasil / $titipan->amount;
+
+                $titipan->amount -= $amountToUseFromThis;
+                $titipan->bagi_pokok -= $amountToUseFromThis * $pokokProportion;
+                $titipan->bagi_hasil -= $amountToUseFromThis * $hasilProportion;
+            }
+
+            if ($titipan->amount <= 0.01) { // Handle small floating point residuals
+                $titipan->delete();
+            } else {
                 $titipan->keterangan = $keterangan;
                 $titipan->save();
-
-                if ($titipan->amount == 0) {
-                    $titipan->delete();
-                }
-
-                $remaining = 0;
-            } else {
-                $remaining -= $titipan->amount;
-                $titipan->keterangan = $keterangan;
-                $titipan->delete();
             }
+
+            $remainingToUse -= $amountToUseFromThis;
         }
     }
 
