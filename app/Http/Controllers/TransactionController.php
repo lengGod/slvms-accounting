@@ -167,9 +167,9 @@ class TransactionController extends Controller
                 $createdTransaction = Transaction::create([
                     'debtor_id' => $validated['debtor_id'],
                     'type' => 'piutang', // Still 'piutang' type, but amount is 0
-                    'amount' => 0,
-                    'bagi_hasil' => 0,
-                    'bagi_pokok' => 0,
+                    'amount' => -($validated['amount'] ?? 0),
+                    'bagi_hasil' => -($validated['bagi_hasil'] ?? 0),
+                    'bagi_pokok' => -($validated['bagi_pokok'] ?? 0),
                     'transaction_date' => $validated['transaction_date'],
                     'description' => $description . ' (Lunas dengan titipan)',
                     'user_id' => auth()->id(),
@@ -270,15 +270,15 @@ class TransactionController extends Controller
                 try {
                     // Create a transaction record with 0 amount, indicating it's an overpayment that became titipan
                     $pembayaran = Transaction::create(array_merge($validated, [
-                        'amount' => 0,
-                        'bagi_pokok' => 0,
-                        'bagi_hasil' => 0,
+                        'amount' => $validated['amount'],
+                        'bagi_pokok' => $bagiPokok,
+                        'bagi_hasil' => $bagiHasil,
                         'description' => ($validated['description'] ?? '') . ' (Pembayaran menjadi titipan)',
                     ]));
 
                     $keterangan = 'Pembayaran menjadi titipan (Transaksi #' . $pembayaran->id . ')';
                     // Record the full payment as a positive titipan adjustment
-                    $debtor->recordTitipanAdjustment($validated['amount'], $keterangan, $pembayaran->id, $bagiPokok, $bagiHasil);
+                    $debtor->recordTitipanAdjustment($validated['amount'], $keterangan, $pembayaran->id, 0, 0);
 
                     DB::commit();
                     return redirect()->route('transactions.index')->with('success', 'Pembayaran berhasil. Karena piutang sudah lunas, pembayaran disimpan sebagai titipan.');
@@ -310,7 +310,7 @@ class TransactionController extends Controller
 
                     // Add the overpayment to titipan
                     $keterangan = 'Kelebihan pembayaran (Transaksi #' . $pembayaran->id . ')';
-                    $debtor->recordTitipanAdjustment($kelebihan, $keterangan, $pembayaran->id, $titipanPokok, $titipanHasil);
+                    $debtor->recordTitipanAdjustment($kelebihan, $keterangan, $pembayaran->id, 0, 0);
 
                     DB::commit();
                     return redirect()->route('transactions.index')->with('success', 'Pembayaran berhasil. Piutang lunas dan kelebihan pembayaran disimpan sebagai titipan.');
@@ -405,9 +405,9 @@ class TransactionController extends Controller
             if ($sisaPiutang <= 0) {
                 // Update transaksi pembayaran dengan amount 0, karena seluruhnya menjadi titipan
                 $transaction->update(array_merge($validated, [
-                    'amount' => 0,
-                    'bagi_pokok' => 0,
-                    'bagi_hasil' => 0,
+                    'amount' => $validated['amount'],
+                    'bagi_pokok' => $validated['bagi_pokok'] ?? 0,
+                    'bagi_hasil' => $validated['bagi_hasil'] ?? 0,
                     'description' => ($validated['description'] ?? '') . ' (Pembayaran menjadi titipan)',
                 ]));
 
@@ -452,8 +452,8 @@ class TransactionController extends Controller
                     $kelebihan,
                     'Penambahan dari kelebihan pembayaran (transaksi #' . $transaction->id . ')',
                     $transaction->id,
-                    $titipanPokok,
-                    $titipanHasil
+                    0,
+                    0
                 );
 
                 return redirect()->route('transactions.index')->with('success', 'Pembayaran berhasil diperbarui. Piutang telah lunas dan kelebihan pembayaran disimpan sebagai titipan sebesar Rp ' . number_format($kelebihan, 0, ',', '.'));

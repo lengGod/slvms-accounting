@@ -62,7 +62,7 @@ class Debtor extends Model
      */
     public function getCurrentBalanceAttribute()
     {
-        return $this->saldo_pokok + $this->saldo_bagi_hasil + $this->total_titipan;
+        return $this->saldo_pokok + $this->saldo_bagi_hasil;
     }
 
     /**
@@ -141,7 +141,14 @@ class Debtor extends Model
      */
     public function getSaldoPokokAttribute()
     {
-        return $this->transactions()->sum('bagi_pokok');
+        $transactionPokok = $this->transactions()->sum('bagi_pokok');
+
+        // Add positive bagi_pokok from titipan adjustments
+        $titipanPokok = $this->titipans()
+            ->where('bagi_pokok', '>', 0) // Only positive bagi_pokok from titipan adjustments
+            ->sum('bagi_pokok');
+
+        return $transactionPokok + $titipanPokok;
     }
 
     /**
@@ -159,7 +166,14 @@ class Debtor extends Model
      */
     public function getSaldoBagiHasilAttribute()
     {
-        return $this->transactions()->sum('bagi_hasil');
+        $transactionHasil = $this->transactions()->sum('bagi_hasil');
+
+        // Add positive bagi_hasil from titipan adjustments
+        $titipanHasil = $this->titipans()
+            ->where('bagi_hasil', '>', 0) // Only positive bagi_hasil from titipan adjustments
+            ->sum('bagi_hasil');
+
+        return $transactionHasil + $titipanHasil;
     }
 
     /**

@@ -187,28 +187,38 @@ class DebtorController extends Controller
             return; // No action needed
         }
 
-        // Create a transaction for every initial balance to ensure an audit trail
-        $transactionType = $totalAmount < 0 ? 'piutang' : 'pembayaran';
-        $transaction = Transaction::create([
-            'debtor_id' => $debtor->id,
-            'transaction_date' => $date,
-            'type' => $transactionType,
-            'amount' => $totalAmount,
-            'bagi_pokok' => $pokokBalance,
-            'bagi_hasil' => $bagiHasilBalance,
-            'description' => 'Saldo Awal',
-            'user_id' => Auth::id(),
-        ]);
-
-        // If the initial balance is positive, it must also be reflected in the titipans table
+        // If the initial balance is positive, it should only be reflected in the titipans table
         if ($totalAmount > 0) {
-            Titipan::create([
+            // Create a transaction record with 0 amount for audit trail purposes
+            $transaction = Transaction::create([
                 'debtor_id' => $debtor->id,
+                'transaction_date' => $date,
+                'type' => 'pembayaran', // Still 'pembayaran' type, but amount is 0
                 'amount' => $totalAmount,
                 'bagi_pokok' => $pokokBalance,
                 'bagi_hasil' => $bagiHasilBalance,
-                'tanggal' => $date,
-                'keterangan' => 'Saldo awal dari pembuatan debitur (Ref Transaksi #' . $transaction->id . ')',
+                'description' => 'Saldo Awal (Titipan)',
+                'user_id' => Auth::id(),
+            ]);
+
+            // Record the initial positive balance as a titipan adjustment
+            $debtor->recordTitipanAdjustment(
+                $totalAmount,
+                'Saldo awal dari pembuatan debitur (Ref Transaksi #' . $transaction->id . ')',
+                $transaction->id,
+                0,
+                0
+            );
+        } else { // If the initial balance is negative (piutang)
+            // Create a transaction for the initial piutang
+            $transaction = Transaction::create([
+                'debtor_id' => $debtor->id,
+                'transaction_date' => $date,
+                'type' => 'piutang',
+                'amount' => $totalAmount, // Negative amount for piutang
+                'bagi_pokok' => $pokokBalance, // Negative for piutang
+                'bagi_hasil' => $bagiHasilBalance, // Negative for piutang
+                'description' => 'Saldo Awal (Piutang)',
                 'user_id' => Auth::id(),
             ]);
         }
