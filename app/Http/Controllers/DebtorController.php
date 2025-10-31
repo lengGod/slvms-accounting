@@ -179,96 +179,38 @@ class DebtorController extends Controller
         ]);
     }
 
-    /**
-     * Handle initial balance (positive = titipan, negative = piutang)
-     * PERBAIKAN: Buat satu transaksi saja untuk saldo awal dengan keterangan lengkap
-     */
     private function handleInitialBalance($debtor, $pokokBalance, $bagiHasilBalance, $balanceType, $date)
     {
-        // Jika kedua jenis saldo dipilih, buat satu transaksi dengan keterangan lengkap
-        if (in_array('pokok', explode(',', $balanceType)) && in_array('bagi_hasil', explode(',', $balanceType))) {
-            $totalAmount = $pokokBalance + $bagiHasilBalance;
+        $totalAmount = $pokokBalance + $bagiHasilBalance;
 
-            if ($totalAmount < 0) {
-                // Piutang untuk kedua jenis
-                Transaction::create([
-                    'debtor_id' => $debtor->id,
-                    'transaction_date' => $date,
-                    'type' => 'piutang',
-                    'amount' => $totalAmount,
-                    'bagi_pokok' => $pokokBalance,
-                    'bagi_hasil' => $bagiHasilBalance,
-                    'description' => 'Piutang awal (Pokok: Rp ' . number_format($pokokBalance, 0, ',', '.') . ', Bagi Hasil: Rp ' . number_format($bagiHasilBalance, 0, ',', '.') . ')',
-                    'user_id' => Auth::id(),
-                ]);
-            } elseif ($totalAmount > 0) {
-                // Titipan untuk kedua jenis
-                Titipan::create([
-                    'debtor_id' => $debtor->id,
-                    'amount' => $totalAmount,
-                    'bagi_pokok' => $pokokBalance,
-                    'bagi_hasil' => $bagiHasilBalance,
-                    'tanggal' => $date,
-                    'keterangan' => 'Titipan awal (Pokok: Rp ' . number_format($pokokBalance, 0, ',', '.') . ', Bagi Hasil: Rp ' . number_format($bagiHasilBalance, 0, ',', '.') . ')',
-                    'user_id' => Auth::id(),
-                ]);
-            }
-        } else {
-            // Handle saldo pokok saja
-            if (in_array('pokok', explode(',', $balanceType)) && $pokokBalance != 0) {
-                if ($pokokBalance > 0) {
-                    // Saldo pokok positif = titipan
-                    Titipan::create([
-                        'debtor_id' => $debtor->id,
-                        'amount' => $pokokBalance,
-                        'bagi_pokok' => $pokokBalance,
-                        'bagi_hasil' => 0,
-                        'tanggal' => $date,
-                        'keterangan' => 'Saldo awal Pokok (Titipan)',
-                        'user_id' => Auth::id(),
-                    ]);
-                } else {
-                    // Saldo pokok negatif = piutang
-                    Transaction::create([
-                        'debtor_id' => $debtor->id,
-                        'transaction_date' => $date,
-                        'type' => 'piutang',
-                        'amount' => $pokokBalance,
-                        'bagi_pokok' => $pokokBalance,
-                        'bagi_hasil' => 0,
-                        'description' => 'Piutang awal Pokok (Saldo awal negatif)',
-                        'user_id' => Auth::id(),
-                    ]);
-                }
-            }
+        if ($totalAmount == 0) {
+            return; // No action needed
+        }
 
-            // Handle saldo bagi hasil saja
-            if (in_array('bagi_hasil', explode(',', $balanceType)) && $bagiHasilBalance != 0) {
-                if ($bagiHasilBalance > 0) {
-                    // Saldo bagi hasil positif = titipan
-                    Titipan::create([
-                        'debtor_id' => $debtor->id,
-                        'amount' => $bagiHasilBalance,
-                        'bagi_pokok' => 0,
-                        'bagi_hasil' => $bagiHasilBalance,
-                        'tanggal' => $date,
-                        'keterangan' => 'Saldo awal Bagi Hasil (Titipan)',
-                        'user_id' => Auth::id(),
-                    ]);
-                } else {
-                    // Saldo bagi hasil negatif = piutang
-                    Transaction::create([
-                        'debtor_id' => $debtor->id,
-                        'transaction_date' => $date,
-                        'type' => 'piutang',
-                        'amount' => $bagiHasilBalance,
-                        'bagi_pokok' => 0,
-                        'bagi_hasil' => $bagiHasilBalance,
-                        'description' => 'Piutang awal Bagi Hasil (Saldo awal negatif)',
-                        'user_id' => Auth::id(),
-                    ]);
-                }
-            }
+        // Create a transaction for every initial balance to ensure an audit trail
+        $transactionType = $totalAmount < 0 ? 'piutang' : 'pembayaran';
+        $transaction = Transaction::create([
+            'debtor_id' => $debtor->id,
+            'transaction_date' => $date,
+            'type' => $transactionType,
+            'amount' => $totalAmount,
+            'bagi_pokok' => $pokokBalance,
+            'bagi_hasil' => $bagiHasilBalance,
+            'description' => 'Saldo Awal',
+            'user_id' => Auth::id(),
+        ]);
+
+        // If the initial balance is positive, it must also be reflected in the titipans table
+        if ($totalAmount > 0) {
+            Titipan::create([
+                'debtor_id' => $debtor->id,
+                'amount' => $totalAmount,
+                'bagi_pokok' => $pokokBalance,
+                'bagi_hasil' => $bagiHasilBalance,
+                'tanggal' => $date,
+                'keterangan' => 'Saldo awal dari pembuatan debitur (Ref Transaksi #' . $transaction->id . ')',
+                'user_id' => Auth::id(),
+            ]);
         }
     }
 
@@ -278,6 +220,6 @@ class DebtorController extends Controller
     private function removeInitialBalanceRecords($debtor)
     {
         $debtor->titipans()->where('keterangan', 'like', '%Saldo awal%')->delete();
-        $debtor->transactions()->where('description', 'like', '%Piutang awal%')->delete();
+        $debtor->transactions()->where('description', 'Saldo Awal')->delete();
     }
 }

@@ -149,12 +149,11 @@ unset($__errorArgs, $__bag); ?>
                             <div class="row mb-3" id="pokokInputContainer" style="display: none;">
                                 <div class="col-md-6">
                                     <label for="pokok_balance" class="form-label">Saldo Awal Pokok</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">Rp</span>
-                                        <input type="number" class="form-control" id="pokok_balance" name="pokok_balance"
-                                            value="<?php echo e(old('pokok_balance')); ?>" step="100">
-                                    </div>
-                                    <div class="form-text">
+                                                                         <div class="input-group">
+                                                                            <span class="input-group-text">Rp</span>
+                                                                            <input type="number" class="form-control" id="pokok_balance" name="pokok_balance"
+                                                                                value="<?php echo e(old('pokok_balance')); ?>" step="any">
+                                                                        </div>                                    <div class="form-text">
                                         <i class="bi bi-info-circle me-1"></i>
                                         <span id="pokokBalanceHint">Nilai negatif untuk piutang, positif untuk
                                             titipan</span>
@@ -176,13 +175,12 @@ unset($__errorArgs, $__bag); ?>
                             <div class="row mb-3" id="bagiHasilInputContainer" style="display: none;">
                                 <div class="col-md-6">
                                     <label for="bagi_hasil_balance" class="form-label">Saldo Awal Bagi Hasil</label>
-                                    <div class="input-group">
-                                        <span class="input-group-text">Rp</span>
-                                        <input type="number" class="form-control" id="bagi_hasil_balance"
-                                            name="bagi_hasil_balance" value="<?php echo e(old('bagi_hasil_balance')); ?>"
-                                            step="100">
-                                    </div>
-                                    <div class="form-text">
+                                                                         <div class="input-group">
+                                                                            <span class="input-group-text">Rp</span>
+                                                                            <input type="number" class="form-control" id="bagi_hasil_balance"
+                                                                                name="bagi_hasil_balance" value="<?php echo e(old('bagi_hasil_balance')); ?>"
+                                                                                step="any">
+                                                                        </div>                                    <div class="form-text">
                                         <i class="bi bi-info-circle me-1"></i>
                                         <span id="bagiHasilBalanceHint">Nilai negatif untuk piutang, positif untuk
                                             titipan</span>
