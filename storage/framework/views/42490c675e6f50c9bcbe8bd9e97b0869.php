@@ -185,9 +185,9 @@
                                         <td></td>
                                         <td></td>
                                         <?php
-                                        $saldoPokok -= $transaction->bagi_pokok;
-                                        $saldoBagiHasil -= $transaction->bagi_hasil;
-                                        $saldoTotal -= $transaction->amount;
+                                        $saldoPokok += $transaction->bagi_pokok;
+                                        $saldoBagiHasil += $transaction->bagi_hasil;
+                                        $saldoTotal += $transaction->amount;
                                         ?>
                                     <?php else: ?>
                                         <td></td>

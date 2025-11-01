@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('titipans', function (Blueprint $table) {
-            //
+            $table->foreignId('transaction_id')->nullable()->constrained('transactions')->onDelete('set null');
         });
     }
 
@@ -22,8 +22,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('titipans', function (Blueprint $table) {
-            $table->dropForeign(['transaction_id']);
-            $table->dropColumn('transaction_id');
+            //
         });
     }
 };

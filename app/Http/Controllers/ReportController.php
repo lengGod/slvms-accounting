@@ -51,11 +51,7 @@ class ReportController extends Controller
         // Hitung saldo berjalan
         $runningBalance = $debtor->initial_balance;
         foreach ($debtor->transactions as $transaction) {
-            if ($transaction->type == 'piutang') {
-                $runningBalance += $transaction->amount;
-            } else {
-                $runningBalance -= $transaction->amount;
-            }
+            $runningBalance += $transaction->amount;
             $transaction->running_balance = $runningBalance;
         }
 
