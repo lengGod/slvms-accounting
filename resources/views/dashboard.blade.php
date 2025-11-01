@@ -46,7 +46,7 @@
                 <div class="card shadow-sm border-0 bg-info text-white h-100">
                     <div class="card-body d-flex flex-column justify-content-start align-items-start text-center">
                         <h6 class="card-title mb-2">Total Saldo Titipan</h6>
-                        <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalSaldo, 0, ',', '.') }}</p>
+                        <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalSaldoTitipan, 0, ',', '.') }}</p>
                     </div>
                 </div>
             </div>

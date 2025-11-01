@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Debtor;
 use App\Models\Transaction;
+use App\Models\Titipan;
 use Carbon\Carbon;
 
 class DashboardController extends Controller
@@ -19,10 +20,8 @@ class DashboardController extends Controller
         // Total Pembayaran (semua transaksi tipe pembayaran)
         $totalPembayaran = Transaction::where('type', 'pembayaran')->sum('amount');
 
-        // Total Saldo (menghitung saldo dinamis dari accessor di model Debtor)
-        $totalSaldo = Debtor::with('transactions', 'titipans')->get()->sum(function ($debtor) {
-            return $debtor->current_balance;
-        });
+        // Total Saldo Titipan
+        $totalSaldoTitipan = Titipan::sum('amount');
 
         // Aktivitas Terbaru (5 transaksi terakhir)
         $latestActivities = Transaction::with(['debtor', 'user'])
@@ -34,7 +33,7 @@ class DashboardController extends Controller
             'totalDebtors',
             'totalPiutang',
             'totalPembayaran',
-            'totalSaldo',
+            'totalSaldoTitipan',
             'latestActivities'
         ));
     }
