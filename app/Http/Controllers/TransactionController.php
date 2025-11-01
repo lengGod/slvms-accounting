@@ -231,7 +231,7 @@ class TransactionController extends Controller
             $debtor = Debtor::find($validated['debtor_id']);
 
             // Cek apakah debitur memiliki titipan
-            if ($debtor->hasTitipan()) {
+            if ($debtor->total_titipan > 0) {
                 // Redirect ke halaman konfirmasi penggunaan titipan
                 return redirect()->route('transactions.createWithTitipanConfirmation', [
                     'debtor_id' => $validated['debtor_id'],
