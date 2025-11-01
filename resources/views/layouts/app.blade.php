@@ -128,6 +128,9 @@
         @yield('content')
     </main>
 
+    @include('partials.confirm-modal')
+    @include('partials.validation-modal')
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
@@ -256,7 +259,30 @@
                 printWindow.close();
             };
         }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
+            var confirmModalForm = document.getElementById('confirmModalForm');
+
+            document.querySelectorAll('.delete-btn').forEach(function(button) {
+                button.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    var action = this.getAttribute('data-action');
+                    confirmModalForm.setAttribute('action', action);
+                    confirmModal.show();
+                });
+            });
+        });
     </script>
+
+    @if ($errors->any())
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            var validationModal = new bootstrap.Modal(document.getElementById('validationModal'));
+            validationModal.show();
+        });
+    </script>
+    @endif
 
     @stack('scripts')
 </body>

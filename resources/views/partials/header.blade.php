@@ -32,10 +32,19 @@
                         <i class="bi bi-shield-lock me-2"></i> Ubah Password
                     </a>
                     <div class="dropdown-divider"></div>
+                    <a href="{{ route('logout') }}"
+                        onclick="event.preventDefault(); document.getElementById('logout-form').submit();"
+                        class="profile-dropdown-item">
+                        <i class="bi bi-box-arrow-right me-2"></i> Keluar
+                    </a>
                 </div>
             </div>
         </div>
     </header>
+
+    <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
+        @csrf
+    </form>
 @endif
 
 <style>
