@@ -22,5 +22,7 @@ class AppServiceProvider extends ServiceProvider
     {
         // Gunakan Bootstrap 5 untuk pagination
         Paginator::useBootstrapFive();
+
+        view()->addNamespace('errors', resource_path('views/errors'));
     }
 }
