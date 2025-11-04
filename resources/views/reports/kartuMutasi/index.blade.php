@@ -61,7 +61,7 @@
                                     </td>
                                     <td>
                                         <span
-                                            class="badge bg-{{ $debtor->debtor_status == 'lunas' ? 'success' : ($debtor->debtor_status == 'lebih_bayar' ? 'info' : 'danger') }}">
+                                            class="badge bg-{{ $debtor->debtor_status == 'lunas' ? 'success' : ($debtor->debtor_status == 'Titipan' ? 'info' : 'danger') }}">
                                             {{ $debtor->keterangan_piutang }}
                                         </span>
                                     </td>
