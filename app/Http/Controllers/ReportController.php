@@ -43,19 +43,35 @@ class ReportController extends Controller
         $startDate = $request->start_date ?: Carbon::now()->startOfMonth()->format('Y-m-d');
         $endDate = $request->end_date ?: Carbon::now()->endOfMonth()->format('Y-m-d');
 
-        $debtor = Debtor::with(['transactions' => function ($query) use ($startDate, $endDate) {
-            $query->whereBetween('transaction_date', [$startDate, $endDate])
-                ->orderBy('transaction_date', 'asc');
-        }])->findOrFail($id);
+        $debtor = Debtor::findOrFail($id);
 
-        // Hitung saldo berjalan
-        $runningBalance = $debtor->initial_balance;
-        foreach ($debtor->transactions as $transaction) {
-            $runningBalance += $transaction->amount;
-            $transaction->running_balance = $runningBalance;
-        }
+        // Saldo awal sebelum tanggal yang difilter
+        $saldoAwalPokok = Transaction::where('debtor_id', $id)
+            ->where('transaction_date', '<', $startDate)
+            ->sum('bagi_pokok');
 
-        return view('reports.kartuMutasi.show', compact('debtor', 'startDate', 'endDate'));
+        $saldoAwalBagiHasil = Transaction::where('debtor_id', $id)
+            ->where('transaction_date', '<', $startDate)
+            ->sum('bagi_hasil');
+
+        $saldoAwalTotal = Transaction::where('debtor_id', $id)
+            ->where('transaction_date', '<', $startDate)
+            ->sum('amount');
+
+        $transactions = Transaction::where('debtor_id', $id)
+            ->whereBetween('transaction_date', [$startDate, $endDate])
+            ->orderBy('transaction_date', 'asc')
+            ->get();
+
+        return view('reports.kartuMutasi.show', compact(
+            'debtor',
+            'startDate',
+            'endDate',
+            'transactions',
+            'saldoAwalPokok',
+            'saldoAwalBagiHasil',
+            'saldoAwalTotal'
+        ));
     }
     /**
      * Export kartu mutasi to Excel
