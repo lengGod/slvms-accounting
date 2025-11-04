@@ -151,18 +151,12 @@
                         </thead>
                         <tbody>
                             <?php
-                            // PERBAIKAN: Ambil saldo awal dari initial_balance_with_type
-                            $saldoPokok = 0;
-                            $saldoBagiHasil = 0;
-                            $saldoTotal = 0;
-                            
-                            if ($debtor->initial_balance_with_type) {
-                                $saldoPokok = $debtor->initial_balance_with_type['pokok_amount'] ?? 0;
-                                $saldoBagiHasil = $debtor->initial_balance_with_type['bagi_hasil_amount'] ?? 0;
-                                $saldoTotal = $debtor->initial_balance_with_type['amount'];
-                            }
+                            $saldoPokok = $saldoAwalPokok;
+                            $saldoBagiHasil = $saldoAwalBagiHasil;
+                            $saldoTotal = $saldoAwalTotal;
                             ?>
-                            @foreach ($debtor->transactions as $transaction)
+                            @if (count($transactions) > 0)
+                                @foreach ($transactions as $transaction)
                                 <tr>
                                     <td>{{ $transaction->formatted_id }}</td>
                                     <td>{{ $transaction->formatted_date }}</td>
@@ -206,25 +200,30 @@
                                         {{ number_format($saldoTotal, 0, ',', '.') }}</td>
                                 </tr>
                             @endforeach
+                            @else
+                                <tr>
+                                    <td colspan="12" class="text-center">Tidak ada transaksi pada periode ini.</td>
+                                </tr>
+                            @endif
                             <tr class="table-active">
                                 <td colspan="3" class="text-end"><strong>Total</strong></td>
                                 <td class="text-danger">
-                                    <strong>{{ number_format($debtor->transactions->where('type', 'piutang')->sum('bagi_pokok'), 0, ',', '.') }}</strong>
+                                    <strong>{{ number_format($transactions->where('type', 'piutang')->sum('bagi_pokok'), 0, ',', '.') }}</strong>
                                 </td>
                                 <td class="text-danger">
-                                    <strong>{{ number_format($debtor->transactions->where('type', 'piutang')->sum('bagi_hasil'), 0, ',', '.') }}</strong>
+                                    <strong>{{ number_format($transactions->where('type', 'piutang')->sum('bagi_hasil'), 0, ',', '.') }}</strong>
                                 </td>
                                 <td class="text-danger">
-                                    <strong>{{ number_format($debtor->transactions->where('type', 'piutang')->sum('amount'), 0, ',', '.') }}</strong>
+                                    <strong>{{ number_format($transactions->where('type', 'piutang')->sum('amount'), 0, ',', '.') }}</strong>
                                 </td>
                                 <td class="text-success">
-                                    <strong>{{ number_format($debtor->transactions->where('type', 'pembayaran')->sum('bagi_pokok'), 0, ',', '.') }}</strong>
+                                    <strong>{{ number_format($transactions->where('type', 'pembayaran')->sum('bagi_pokok'), 0, ',', '.') }}</strong>
                                 </td>
                                 <td class="text-success">
-                                    <strong>{{ number_format($debtor->transactions->where('type', 'pembayaran')->sum('bagi_hasil'), 0, ',', '.') }}</strong>
+                                    <strong>{{ number_format($transactions->where('type', 'pembayaran')->sum('bagi_hasil'), 0, ',', '.') }}</strong>
                                 </td>
                                 <td class="text-success">
-                                    <strong>{{ number_format($debtor->transactions->where('type', 'pembayaran')->sum('amount'), 0, ',', '.') }}</strong>
+                                    <strong>{{ number_format($transactions->where('type', 'pembayaran')->sum('amount'), 0, ',', '.') }}</strong>
                                 </td>
                                 <td class="{{ $saldoPokok >= 0 ? 'text-success' : 'text-danger' }}">
                                     <strong>{{ number_format($saldoPokok, 0, ',', '.') }}</strong>
