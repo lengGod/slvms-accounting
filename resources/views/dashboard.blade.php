@@ -18,8 +18,13 @@
             <div class="col-md-3">
                 <div class="card shadow-sm border-0 bg-primary text-white h-100">
                     <div class="card-body d-flex flex-column justify-content-start align-items-start text-center">
-                        <h6 class="card-title mb-2">Total Debitur</h6>
-                        <p class="card-text fs-5 fw-bold mb-0">{{ $totalDebtors }}</p>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-people-fill fs-3 me-3"></i>
+                            <div>
+                                <h6 class="card-title mb-2">Total Debitur</h6>
+                                <p class="card-text fs-5 fw-bold mb-0">{{ $totalDebtors }}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -27,8 +32,13 @@
             <div class="col-md-3">
                 <div class="card shadow-sm border-0 bg-warning text-white h-100">
                     <div class="card-body d-flex flex-column justify-content-start align-items-start text-center">
-                        <h6 class="card-title mb-2">Total Piutang</h6>
-                        <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalPiutang, 0, ',', '.') }}</p>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-journal-text fs-3 me-3"></i>
+                            <div>
+                                <h6 class="card-title mb-2">Total Piutang</h6>
+                                <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalPiutang, 0, ',', '.') }}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -36,8 +46,13 @@
             <div class="col-md-3">
                 <div class="card shadow-sm border-0 bg-success text-white h-100">
                     <div class="card-body d-flex flex-column justify-content-start align-items-start text-center">
-                        <h6 class="card-title mb-2">Total Pembayaran</h6>
-                        <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalPembayaran, 0, ',', '.') }}</p>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-cash-coin fs-3 me-3"></i>
+                            <div>
+                                <h6 class="card-title mb-2">Total Pembayaran</h6>
+                                <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalPembayaran, 0, ',', '.') }}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -45,8 +60,13 @@
             <div class="col-md-3">
                 <div class="card shadow-sm border-0 bg-info text-white h-100">
                     <div class="card-body d-flex flex-column justify-content-start align-items-start text-center">
-                        <h6 class="card-title mb-2">Total Saldo Titipan</h6>
-                        <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalSaldoTitipan, 0, ',', '.') }}</p>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-wallet2 fs-3 me-3"></i>
+                            <div>
+                                <h6 class="card-title mb-2">Total Saldo Titipan</h6>
+                                <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalSaldoTitipan, 0, ',', '.') }}</p>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
