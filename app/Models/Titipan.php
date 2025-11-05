@@ -24,7 +24,7 @@ class Titipan extends Model
         'tanggal' => 'date',
     ];
 
-    protected $appends = ['formatted_amount'];
+    protected $appends = ['formatted_amount', 'formatted_tanggal'];
 
     public function debtor()
     {
@@ -42,5 +42,13 @@ class Titipan extends Model
     public function getFormattedAmountAttribute()
     {
         return 'Rp ' . number_format($this->amount, 0, ',', '.');
+    }
+
+    /**
+     * Get the formatted tanggal attribute
+     */
+    public function getFormattedTanggalAttribute()
+    {
+        return $this->tanggal->format('d F Y');
     }
 }

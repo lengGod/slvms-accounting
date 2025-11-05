@@ -29,12 +29,16 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
+        // Total Saldo
+        $totalSaldo = $totalSaldoTitipan;
+
         return view('dashboard', compact(
             'totalDebtors',
             'totalPiutang',
             'totalPembayaran',
             'totalSaldoTitipan',
-            'latestActivities'
+            'latestActivities',
+            'totalSaldo'
         ));
     }
 }
