@@ -95,7 +95,7 @@
                             @enderror
                         </div>
                         <div class="col-md-6">
-                            <label for="bagi_pokok" class="form-label">Bagi Pokok</label>
+                            <label for="bagi_pokok" class="form-label">Pokok</label>
                             <div class="input-group">
                                 <span class="input-group-text">Rp</span>
                                 <input type="number" class="form-control" id="bagi_pokok" name="bagi_pokok" placeholder="0"
