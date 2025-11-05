@@ -182,7 +182,7 @@ class TransactionController extends Controller
 
             // Kurangi/hapus titipan yang digunakan
             if ($usedTitipan > 0) {
-                $debtor->useTitipanForNewPiutang($usedTitipan, $createdTransaction->id);
+                $debtor->useTitipanForNewPiutang($usedTitipan, $createdTransaction->id, $validated['bagi_pokok'] ?? 0, $validated['bagi_hasil'] ?? 0, $piutangAmount);
             }
 
             DB::commit();
