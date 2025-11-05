@@ -1,19 +1,17 @@
-@extends('layouts.app')
-
-@php
+<?php
     $pageTitle = 'Kartu Mutasi: ' . $debtor->name;
-@endphp
+?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="container-fluid p-4">
         <!-- Header Section -->
         <div class="row mb-4">
             <div class="col-md-8">
                 <h1 class="display-6 fw-bold">Kartu Mutasi</h1>
-                <p class="text-muted">Detail transaksi untuk debitur: {{ $debtor->name }}</p>
+                <p class="text-muted">Detail transaksi untuk debitur: <?php echo e($debtor->name); ?></p>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                <a href="{{ route('reports.kartu-mutasi') }}" class="btn btn-secondary me-2">
+                <a href="<?php echo e(route('reports.kartu-mutasi')); ?>" class="btn btn-secondary me-2">
                     <i class="bi bi-arrow-left me-1"></i> Kembali
                 </a>
                 <button class="btn btn-primary" onclick="printContent()">
@@ -31,19 +29,19 @@
                         <table class="table table-borderless">
                             <tr>
                                 <td style="width: 150px;"><strong>Nama</strong></td>
-                                <td>{{ $debtor->name }}</td>
+                                <td><?php echo e($debtor->name); ?></td>
                             </tr>
                             <tr>
                                 <td><strong>Alamat</strong></td>
-                                <td>{{ $debtor->address }}</td>
+                                <td><?php echo e($debtor->address); ?></td>
                             </tr>
                             <tr>
                                 <td><strong>No. Telepon</strong></td>
-                                <td>{{ $debtor->phone }}</td>
+                                <td><?php echo e($debtor->phone); ?></td>
                             </tr>
                             <tr>
                                 <td><strong>Tanggal Bergabung</strong></td>
-                                <td>{{ $debtor->formatted_joined_at }}</td>
+                                <td><?php echo e($debtor->formatted_joined_at); ?></td>
                             </tr>
                         </table>
                     </div>
@@ -53,41 +51,46 @@
                             <tr>
                                 <td style="width: 150px;"><strong>Saldo Awal</strong></td>
                                 <td>
-                                    @if ($debtor->initial_balance_with_type)
-                                        {{ $debtor->initial_balance_with_type['formatted'] }}
+                                    <?php if($debtor->initial_balance_with_type): ?>
+                                        <?php echo e($debtor->initial_balance_with_type['formatted']); ?>
+
                                         <span
-                                            class="badge bg-{{ $debtor->initial_balance_with_type['is_negative'] ? 'danger' : 'success' }} ms-2">
-                                            {{ $debtor->initial_balance_with_type['is_negative'] ? 'Piutang' : 'Titipan' }}
+                                            class="badge bg-<?php echo e($debtor->initial_balance_with_type['is_negative'] ? 'danger' : 'success'); ?> ms-2">
+                                            <?php echo e($debtor->initial_balance_with_type['is_negative'] ? 'Piutang' : 'Titipan'); ?>
+
                                         </span>
                                         <span class="badge bg-secondary ms-1">
-                                            {{ $debtor->initial_balance_with_type['type_label'] }}
+                                            <?php echo e($debtor->initial_balance_with_type['type_label']); ?>
+
                                         </span>
-                                    @else
+                                    <?php else: ?>
                                         Rp 0
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                             <tr>
                                 <td><strong>Total Piutang</strong></td>
-                                <td class="text-danger">{{ $debtor->formatted_total_piutang }}</td>
+                                <td class="text-danger"><?php echo e($debtor->formatted_total_piutang); ?></td>
                             </tr>
                             <tr>
                                 <td><strong>Total Pembayaran</strong></td>
-                                <td class="text-success">{{ $debtor->formatted_total_pembayaran }}</td>
+                                <td class="text-success"><?php echo e($debtor->formatted_total_pembayaran); ?></td>
                             </tr>
                             <tr>
                                 <td><strong>Sisa Saldo</strong></td>
                                 <td
-                                    class="{{ $debtor->current_balance > 0 ? 'text-success' : ($debtor->current_balance < 0 ? 'text-danger' : '') }}">
-                                    {{ $debtor->formatted_balance }}
+                                    class="<?php echo e($debtor->current_balance > 0 ? 'text-success' : ($debtor->current_balance < 0 ? 'text-danger' : '')); ?>">
+                                    <?php echo e($debtor->formatted_balance); ?>
+
                                 </td>
                             </tr>
                             <tr>
                                 <td><strong>Status</strong></td>
                                 <td>
                                     <span
-                                        class="badge bg-{{ $debtor->debtor_status == 'lunas' ? 'success' : ($debtor->debtor_status == 'lebih_bayar' ? 'info' : 'danger') }}">
-                                        {{ $debtor->keterangan_piutang }}
+                                        class="badge bg-<?php echo e($debtor->debtor_status == 'lunas' ? 'success' : ($debtor->debtor_status == 'lebih_bayar' ? 'info' : 'danger')); ?>">
+                                        <?php echo e($debtor->keterangan_piutang); ?>
+
                                     </span>
                                 </td>
                             </tr>
@@ -100,14 +103,14 @@
         <!-- Filter Form -->
         <div class="card shadow-sm mb-4">
             <div class="card-body">
-                <form action="{{ route('reports.kartu-mutasi.show', $debtor->id) }}" method="GET" class="row g-3">
+                <form action="<?php echo e(route('reports.kartu-mutasi.show', $debtor->id)); ?>" method="GET" class="row g-3">
                     <div class="col-md-5">
                         <label class="form-label">Dari Tanggal</label>
-                        <input type="date" name="start_date" class="form-control" value="{{ $startDate }}">
+                        <input type="date" name="start_date" class="form-control" value="<?php echo e($startDate); ?>">
                     </div>
                     <div class="col-md-5">
                         <label class="form-label">Sampai Tanggal</label>
-                        <input type="date" name="end_date" class="form-control" value="{{ $endDate }}">
+                        <input type="date" name="end_date" class="form-control" value="<?php echo e($endDate); ?>">
                     </div>
                     <div class="col-md-2 d-flex align-items-end">
                         <button type="submit" class="btn btn-secondary w-100">
@@ -152,89 +155,89 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @php
+                            <?php
                                 $saldoPokok = $saldoAwalPokok;
                                 $saldoBagiHasil = $saldoAwalBagiHasil;
                                 $saldoTotal = $saldoAwalTotal;
-                            @endphp
-                            @if (count($sortedEvents) > 0)
-                                @foreach ($sortedEvents as $transaction)
+                            ?>
+                            <?php if(count($sortedEvents) > 0): ?>
+                                <?php $__currentLoopData = $sortedEvents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $transaction): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr>
-                                        <td>{{ $transaction['id'] ?? '-' }}</td>
-                                        <td>{{ \Carbon\Carbon::parse($transaction['date'])->format('d M Y') ?? '-' }}</td>
-                                        <td>{{ $transaction['description'] ?? '-' }}</td>
+                                        <td><?php echo e($transaction['id'] ?? '-'); ?></td>
+                                        <td><?php echo e(\Carbon\Carbon::parse($transaction['date'])->format('d M Y') ?? '-'); ?></td>
+                                        <td><?php echo e($transaction['description'] ?? '-'); ?></td>
 
-                                        @php
+                                        <?php
                                             $bagiPokok = $transaction['pokok'] ?? 0;
                                             $bagiHasil = $transaction['hasil'] ?? 0;
                                             $amount = $transaction['total'] ?? 0;
                                             $type = $transaction['type'] ?? '';
-                                        @endphp
+                                        ?>
 
-                                        @if ($type == 'piutang')
-                                            <td class="text-danger">{{ number_format($bagiPokok, 0, ',', '.') }}</td>
-                                            <td class="text-danger">{{ number_format($bagiHasil, 0, ',', '.') }}</td>
-                                            <td class="text-danger fw-bold">{{ number_format($amount, 0, ',', '.') }}</td>
+                                        <?php if($type == 'piutang'): ?>
+                                            <td class="text-danger"><?php echo e(number_format($bagiPokok, 0, ',', '.')); ?></td>
+                                            <td class="text-danger"><?php echo e(number_format($bagiHasil, 0, ',', '.')); ?></td>
+                                            <td class="text-danger fw-bold"><?php echo e(number_format($amount, 0, ',', '.')); ?></td>
                                             <td></td>
                                             <td></td>
                                             <td></td>
-                                        @else
+                                        <?php else: ?>
                                             <td></td>
                                             <td></td>
                                             <td></td>
-                                            <td class="text-success">{{ number_format($bagiPokok, 0, ',', '.') }}</td>
-                                            <td class="text-success">{{ number_format($bagiHasil, 0, ',', '.') }}</td>
-                                            <td class="text-success fw-bold">{{ number_format($amount, 0, ',', '.') }}</td>
-                                        @endif
+                                            <td class="text-success"><?php echo e(number_format($bagiPokok, 0, ',', '.')); ?></td>
+                                            <td class="text-success"><?php echo e(number_format($bagiHasil, 0, ',', '.')); ?></td>
+                                            <td class="text-success fw-bold"><?php echo e(number_format($amount, 0, ',', '.')); ?></td>
+                                        <?php endif; ?>
 
-                                        @php
+                                        <?php
                                             $saldoPokok += $bagiPokok;
                                             $saldoBagiHasil += $bagiHasil;
                                             $saldoTotal += $amount;
-                                        @endphp
+                                        ?>
 
-                                        <td class="{{ $saldoPokok >= 0 ? 'text-success' : 'text-danger' }}">
-                                            {{ number_format($saldoPokok, 0, ',', '.') }}</td>
-                                        <td class="{{ $saldoBagiHasil >= 0 ? 'text-success' : 'text-danger' }}">
-                                            {{ number_format($saldoBagiHasil, 0, ',', '.') }}</td>
-                                        <td class="{{ $saldoTotal >= 0 ? 'text-success' : 'text-danger' }}">
-                                            <strong>{{ number_format($saldoTotal, 0, ',', '.') }}</strong>
+                                        <td class="<?php echo e($saldoPokok >= 0 ? 'text-success' : 'text-danger'); ?>">
+                                            <?php echo e(number_format($saldoPokok, 0, ',', '.')); ?></td>
+                                        <td class="<?php echo e($saldoBagiHasil >= 0 ? 'text-success' : 'text-danger'); ?>">
+                                            <?php echo e(number_format($saldoBagiHasil, 0, ',', '.')); ?></td>
+                                        <td class="<?php echo e($saldoTotal >= 0 ? 'text-success' : 'text-danger'); ?>">
+                                            <strong><?php echo e(number_format($saldoTotal, 0, ',', '.')); ?></strong>
                                         </td>
                                     </tr>
-                                @endforeach
-                            @else
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            <?php else: ?>
                                 <tr>
                                     <td colspan="12" class="text-center">Tidak ada transaksi pada periode ini.</td>
                                 </tr>
-                            @endif
+                            <?php endif; ?>
                             <tr class="table-active">
                                 <td colspan="3" class="text-end"><strong>Total</strong></td>
                                 <td class="text-danger">
-                                    <strong>{{ number_format($sortedEvents->where('type', 'piutang')->sum('pokok') ?? 0, 0, ',', '.') }}</strong>
+                                    <strong><?php echo e(number_format($sortedEvents->where('type', 'piutang')->sum('pokok') ?? 0, 0, ',', '.')); ?></strong>
                                 </td>
                                 <td class="text-danger">
-                                    <strong>{{ number_format($sortedEvents->where('type', 'piutang')->sum('hasil') ?? 0, 0, ',', '.') }}</strong>
+                                    <strong><?php echo e(number_format($sortedEvents->where('type', 'piutang')->sum('hasil') ?? 0, 0, ',', '.')); ?></strong>
                                 </td>
                                 <td class="text-danger">
-                                    <strong>{{ number_format($sortedEvents->where('type', 'piutang')->sum('total') ?? 0, 0, ',', '.') }}</strong>
+                                    <strong><?php echo e(number_format($sortedEvents->where('type', 'piutang')->sum('total') ?? 0, 0, ',', '.')); ?></strong>
                                 </td>
                                 <td class="text-success">
-                                    <strong>{{ number_format($sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('pokok') ?? 0, 0, ',', '.') }}</strong>
+                                    <strong><?php echo e(number_format($sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('pokok') ?? 0, 0, ',', '.')); ?></strong>
                                 </td>
                                 <td class="text-success">
-                                    <strong>{{ number_format($sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('hasil') ?? 0, 0, ',', '.') }}</strong>
+                                    <strong><?php echo e(number_format($sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('hasil') ?? 0, 0, ',', '.')); ?></strong>
                                 </td>
                                 <td class="text-success">
-                                    <strong>{{ number_format($sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('total') ?? 0, 0, ',', '.') }}</strong>
+                                    <strong><?php echo e(number_format($sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('total') ?? 0, 0, ',', '.')); ?></strong>
                                 </td>
-                                <td class="{{ $saldoPokok >= 0 ? 'text-success' : 'text-danger' }}">
-                                    <strong>{{ number_format($saldoPokok, 0, ',', '.') }}</strong>
+                                <td class="<?php echo e($saldoPokok >= 0 ? 'text-success' : 'text-danger'); ?>">
+                                    <strong><?php echo e(number_format($saldoPokok, 0, ',', '.')); ?></strong>
                                 </td>
-                                <td class="{{ $saldoBagiHasil >= 0 ? 'text-success' : 'text-danger' }}">
-                                    <strong>{{ number_format($saldoBagiHasil, 0, ',', '.') }}</strong>
+                                <td class="<?php echo e($saldoBagiHasil >= 0 ? 'text-success' : 'text-danger'); ?>">
+                                    <strong><?php echo e(number_format($saldoBagiHasil, 0, ',', '.')); ?></strong>
                                 </td>
-                                <td class="{{ $saldoTotal >= 0 ? 'text-success' : 'text-danger' }}">
-                                    <strong>{{ number_format($saldoTotal, 0, ',', '.') }}</strong>
+                                <td class="<?php echo e($saldoTotal >= 0 ? 'text-success' : 'text-danger'); ?>">
+                                    <strong><?php echo e(number_format($saldoTotal, 0, ',', '.')); ?></strong>
                                 </td>
                             </tr>
                         </tbody>
@@ -243,4 +246,6 @@
             </div>
         </div>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\slv-acounting\resources\views/reports/kartuMutasi/show.blade.php ENDPATH**/ ?>

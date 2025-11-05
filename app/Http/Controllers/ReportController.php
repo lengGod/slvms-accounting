@@ -46,29 +46,68 @@ class ReportController extends Controller
 
         $debtor = Debtor::findOrFail($id);
 
-        // Saldo awal sebelum tanggal yang difilter
+        // Saldo awal before the filtered date, considering both transactions and titipans
         $saldoAwalPokok = Transaction::where('debtor_id', $id)
             ->where('transaction_date', '<', $startDate)
+            ->sum('bagi_pokok');
+        $saldoAwalPokok += Titipan::where('debtor_id', $id)
+            ->where('tanggal', '<', $startDate)
             ->sum('bagi_pokok');
 
         $saldoAwalBagiHasil = Transaction::where('debtor_id', $id)
             ->where('transaction_date', '<', $startDate)
             ->sum('bagi_hasil');
+        $saldoAwalBagiHasil += Titipan::where('debtor_id', $id)
+            ->where('tanggal', '<', $startDate)
+            ->sum('bagi_hasil');
 
-        $saldoAwalTotal = Transaction::where('debtor_id', $id)
-            ->where('transaction_date', '<', $startDate)
-            ->sum('amount');
+        $saldoAwalTotal = $saldoAwalPokok + $saldoAwalBagiHasil;
 
+        // Get all transactions and titipans within the date range
         $transactions = Transaction::where('debtor_id', $id)
             ->whereBetween('transaction_date', [$startDate, $endDate])
-            ->orderBy('transaction_date', 'asc')
             ->get();
+
+        $titipans = Titipan::where('debtor_id', $id)
+            ->whereBetween('tanggal', [$startDate, $endDate])
+            ->get();
+
+        // Merge and sort transactions and titipans into a single event log
+        $events = collect([]);
+
+        foreach ($transactions as $transaction) {
+            $events->push([
+                'id' => $transaction->id,
+                'date' => $transaction->transaction_date,
+                'description' => $transaction->description,
+                'type' => $transaction->type,
+                'pokok' => $transaction->bagi_pokok,
+                'hasil' => $transaction->bagi_hasil,
+                'total' => $transaction->amount,
+                'source' => 'transaction',
+            ]);
+        }
+
+        foreach ($titipans as $titipan) {
+            $events->push([
+                'id' => $titipan->id,
+                'date' => $titipan->tanggal,
+                'description' => $titipan->keterangan,
+                'type' => $titipan->amount > 0 ? 'titipan_masuk' : 'titipan_keluar',
+                'pokok' => $titipan->bagi_pokok,
+                'hasil' => $titipan->bagi_hasil,
+                'total' => $titipan->amount,
+                'source' => 'titipan',
+            ]);
+        }
+
+        $sortedEvents = $events->sortBy('date');
 
         return view('reports.kartuMutasi.show', compact(
             'debtor',
             'startDate',
             'endDate',
-            'transactions',
+            'sortedEvents',
             'saldoAwalPokok',
             'saldoAwalBagiHasil',
             'saldoAwalTotal'

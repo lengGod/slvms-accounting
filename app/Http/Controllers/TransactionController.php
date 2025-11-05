@@ -272,7 +272,7 @@ class TransactionController extends Controller
             if ($sisaPiutangReal <= 0) {
                 DB::beginTransaction();
                 try {
-                    // Create a transaction record with 0 amount, indicating it's an overpayment that became titipan
+                    // Create a transaction record, the amount will be fully recorded as titipan
                     $pembayaran = Transaction::create(array_merge($validated, [
                         'amount' => $validated['amount'],
                         'bagi_pokok' => $bagiPokok,
@@ -280,9 +280,16 @@ class TransactionController extends Controller
                         'description' => ($validated['description'] ?? '') . ' (Pembayaran menjadi titipan)',
                     ]));
 
+                    $totalAlokasi = $bagiHasil + $bagiPokok;
+
+                    // If allocation is missing or doesn't cover the full amount, default to pokok
+                    if ($totalAlokasi < $validated['amount']) {
+                        $bagiPokok += $validated['amount'] - $totalAlokasi;
+                    }
+
                     $keterangan = 'Pembayaran menjadi titipan (Transaksi #' . $pembayaran->id . ')';
                     // Record the full payment as a positive titipan adjustment
-                    $debtor->recordTitipanAdjustment($validated['amount'], $keterangan, $pembayaran->id, 0, 0);
+                    $debtor->recordTitipanAdjustment($validated['amount'], $keterangan, $pembayaran->id, $bagiPokok, $bagiHasil);
 
                     DB::commit();
                     return redirect()->route('transactions.index')->with('success', 'Pembayaran berhasil. Karena piutang sudah lunas, pembayaran disimpan sebagai titipan.');
@@ -302,6 +309,11 @@ class TransactionController extends Controller
                 $titipanHasil = $bagiHasil - $allocatedHasil;
                 $titipanPokok = $bagiPokok - $allocatedPokok;
 
+                $totalAllocatedTitipan = $titipanPokok + $titipanHasil;
+                if ($totalAllocatedTitipan < $kelebihan) {
+                    $titipanPokok += $kelebihan - $totalAllocatedTitipan;
+                }
+
                 DB::beginTransaction();
                 try {
                     // Create payment transaction only for the amount of the real debt
@@ -314,7 +326,7 @@ class TransactionController extends Controller
 
                     // Add the overpayment to titipan
                     $keterangan = 'Kelebihan pembayaran (Transaksi #' . $pembayaran->id . ')';
-                    $debtor->recordTitipanAdjustment($kelebihan, $keterangan, $pembayaran->id, 0, 0);
+                    $debtor->recordTitipanAdjustment($kelebihan, $keterangan, $pembayaran->id, $titipanPokok, $titipanHasil);
 
                     DB::commit();
                     return redirect()->route('transactions.index')->with('success', 'Pembayaran berhasil. Piutang lunas dan kelebihan pembayaran disimpan sebagai titipan.');
