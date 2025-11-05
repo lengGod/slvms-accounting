@@ -36,15 +36,14 @@ class UserController extends Controller
             'email' => 'required|string|email|max:255|unique:users',
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:admin,accounting',
-            'phone' => 'nullable|string|max:20',
+
         ]);
 
         $user = new User();
         $user->name = $request->name;
         $user->email = $request->email;
         $user->password = Hash::make($request->password);
-        $user->role = $request->role;
-        $user->phone = $request->phone;
+
         $user->save();
 
         return redirect()->route('users.index')
@@ -82,13 +81,10 @@ class UserController extends Controller
                 Rule::unique('users')->ignore($user->id),
             ],
             'role' => 'required|in:admin,accounting',
-            'phone' => 'nullable|string|max:20',
         ]);
 
         $user->name = $request->name;
-        $user->email = $request->email;
-        $user->role = $request->role;
-        $user->phone = $request->phone;
+
 
         // Update password if provided
         if ($request->filled('password')) {

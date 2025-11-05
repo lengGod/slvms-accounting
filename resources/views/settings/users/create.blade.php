@@ -68,14 +68,7 @@
                                         <div class="text-danger small">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="phone" class="form-label">No. Telepon</label>
-                                    <input type="text" class="form-control" id="phone" name="phone"
-                                        value="{{ old('phone') }}">
-                                    @error('phone')
-                                        <div class="text-danger small">{{ $message }}</div>
-                                    @enderror
-                                </div>
+
                                 <div class="col-12">
                                     <button type="submit" class="btn btn-primary">
                                         <i class="bi bi-save me-1"></i> Simpan Pengguna

@@ -53,14 +53,7 @@
                                         <div class="text-danger small">{{ $message }}</div>
                                     @enderror
                                 </div>
-                                <div class="col-md-6">
-                                    <label for="phone" class="form-label">No. Telepon</label>
-                                    <input type="text" class="form-control" id="phone" name="phone"
-                                        value="{{ old('phone', $user->phone) }}">
-                                    @error('phone')
-                                        <div class="text-danger small">{{ $message }}</div>
-                                    @enderror
-                                </div>
+
                                 <div class="col-md-6">
                                     <label for="password" class="form-label">Password Baru</label>
                                     <input type="password" class="form-control" id="password" name="password">

@@ -56,10 +56,7 @@
                                     </span>
                                 </td>
                             </tr>
-                            <tr>
-                                <td>No. Telepon</td>
-                                <td>{{ $user->phone ?: '-' }}</td>
-                            </tr>
+
                             <tr>
                                 <td>Dibuat Pada</td>
                                 <td>{{ $user->created_at->format('d M Y H:i') }}</td>
