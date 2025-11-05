@@ -171,9 +171,9 @@ class TransactionController extends Controller
                 $createdTransaction = Transaction::create([
                     'debtor_id' => $validated['debtor_id'],
                     'type' => 'piutang', // Still 'piutang' type, but amount is 0
-                    'amount' => -($validated['amount'] ?? 0),
-                    'bagi_hasil' => -($validated['bagi_hasil'] ?? 0),
-                    'bagi_pokok' => -($validated['bagi_pokok'] ?? 0),
+                    'amount' => 0,
+                    'bagi_hasil' => 0,
+                    'bagi_pokok' => 0,
                     'transaction_date' => $validated['transaction_date'],
                     'description' => $description . ' (Lunas dengan titipan)',
                     'user_id' => auth()->id(),
@@ -182,7 +182,7 @@ class TransactionController extends Controller
 
             // Kurangi/hapus titipan yang digunakan
             if ($usedTitipan > 0) {
-                $debtor->useTitipanForNewPiutang($usedTitipan, $createdTransaction->id, $validated['bagi_pokok'] ?? 0, $validated['bagi_hasil'] ?? 0, $piutangAmount);
+                $debtor->useTitipanForNewPiutang($usedTitipan, $createdTransaction->id);
             }
 
             DB::commit();
@@ -272,11 +272,11 @@ class TransactionController extends Controller
             if ($sisaPiutangReal <= 0) {
                 DB::beginTransaction();
                 try {
-                    // Create a transaction record, the amount will be fully recorded as titipan
+                    // Create a transaction record, but set amount and allocations to 0 as it's fully a titipan
                     $pembayaran = Transaction::create(array_merge($validated, [
-                        'amount' => $validated['amount'],
-                        'bagi_pokok' => $bagiPokok,
-                        'bagi_hasil' => $bagiHasil,
+                        'amount' => 0,
+                        'bagi_pokok' => 0,
+                        'bagi_hasil' => 0,
                         'description' => ($validated['description'] ?? '') . ' (Pembayaran menjadi titipan)',
                     ]));
 
@@ -491,11 +491,30 @@ class TransactionController extends Controller
     {
         DB::beginTransaction();
         try {
+            $debtor = $transaction->debtor;
+
+            // Get all associated Titipan records before deletion
+            $associatedTitipans = Titipan::where('transaction_id', $transaction->id)->get();
+
+            foreach ($associatedTitipans as $titipan) {
+                // Reverse the titipan adjustment
+                $debtor->recordTitipanAdjustment(
+                    -$titipan->amount,
+                    'Pengembalian titipan dari transaksi yang dihapus #' . $transaction->id,
+                    null, // No transaction_id for the reversal itself
+                    -$titipan->bagi_pokok,
+                    -$titipan->bagi_hasil
+                );
+            }
+
+            // Delete associated Titipan records
+            Titipan::where('transaction_id', $transaction->id)->delete();
+
             // Then delete the transaction
             $transaction->delete();
 
             DB::commit();
-            return redirect()->route('transactions.index')->with('success', 'Transaksi berhasil dihapus');
+            return redirect()->route('transactions.index')->with('success', 'Transaksi berhasil dihapus dan nominal dikembalikan.');
         } catch (\Exception $e) {
             DB::rollBack();
             return redirect()->route('transactions.index')->with('error', 'Gagal menghapus transaksi: ' . $e->getMessage());

@@ -87,19 +87,33 @@ class Transaction extends Model
     // Format amount dengan currency
     public function getFormattedAmountAttribute()
     {
-        return 'Rp ' . number_format($this->amount, 0, ',', '.');
+        // If it's a 'pembayaran' or 'piutang' transaction and its amount is 0, it means the payment/piutang was fully converted to titipan.
+        // In this case, we should display the amount from the associated titipan record.
+        if (($this->type === 'pembayaran' || $this->type === 'piutang') && $this->amount == 0) {
+            $titipanAmount = $this->debtor->titipans()->where('transaction_id', $this->id)->sum('amount');
+            return 'Rp ' . number_format(abs($titipanAmount), 0, ',', '.'); // Use abs() as titipan amount might be negative for usage
+        }
+        return 'Rp ' . number_format(abs($this->amount), 0, ',', '.');
     }
 
     // Format bagi hasil dengan currency
     public function getFormattedBagiHasilAttribute()
     {
-        return 'Rp ' . number_format($this->bagi_hasil ?? 0, 0, ',', '.');
+        if (($this->type === 'pembayaran' || $this->type === 'piutang') && $this->amount == 0) {
+            $titipanBagiHasil = $this->debtor->titipans()->where('transaction_id', $this->id)->sum('bagi_hasil');
+            return 'Rp ' . number_format(abs($titipanBagiHasil ?? 0), 0, ',', '.');
+        }
+        return 'Rp ' . number_format(abs($this->bagi_hasil ?? 0), 0, ',', '.');
     }
 
     // Format bagi pokok dengan currency
     public function getFormattedBagiPokokAttribute()
     {
-        return 'Rp ' . number_format($this->bagi_pokok ?? 0, 0, ',', '.');
+        if (($this->type === 'pembayaran' || $this->type === 'piutang') && $this->amount == 0) {
+            $titipanBagiPokok = $this->debtor->titipans()->where('transaction_id', $this->id)->sum('bagi_pokok');
+            return 'Rp ' . number_format(abs($titipanBagiPokok ?? 0), 0, ',', '.');
+        }
+        return 'Rp ' . number_format(abs($this->bagi_pokok ?? 0), 0, ',', '.');
     }
 
     // Format tanggal
