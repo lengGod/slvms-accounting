@@ -24,24 +24,61 @@ SLVMS adalah aplikasi manajemen pinjaman dan transaksi berbasis Laravel 12 yang 
 -   FakerPHP
 -   PHPUnit
 
-## 📦 Instalasi
+## Prerequisites
 
-git clone https://github.com/lengGod/slvms-accounting.git
-cd slvms-accounting
+Sebelum memulai, pastikan Anda telah menginstal perangkat lunak berikut di komputer Anda:
 
-# Install dependency PHP
+*   **Web Server Environment:** Anda bisa menggunakan [Laragon](https://laragon.org/download/), [XAMPP](https://www.apachefriends.org/index.html), atau [WAMP](https://www.wampserver.com/en/). Ini akan menyediakan Apache/Nginx, MySQL/MariaDB, dan PHP.
+*   **PHP:** Pastikan versi PHP Anda `^8.2` atau lebih tinggi.
+*   **Composer:** Dependency manager untuk PHP. Anda bisa mengunduhnya [di sini](https://getcomposer.org/).
+*   **Node.js & npm:** JavaScript runtime dan package manager. Anda bisa mengunduhnya [di sini](https://nodejs.org/).
+*   **Git:** Sistem kontrol versi untuk meng-clone repositori. Anda bisa mengunduhnya [di sini](https://git-scm.com/).
 
-composer install
+## 📦 Instalasi & Menjalankan Proyek
 
-# Salin file .env dan generate key
+1.  **Clone Repositori:**
+    ```bash
+    git clone https://github.com/lengGod/slvms-accounting.git
+    cd slvms-accounting
+    ```
 
-cp .env.example .env
-php artisan key:generate
+2.  **Install Dependensi PHP:**
+    ```bash
+    composer install
+    ```
 
-# Pastikan konfigurasi database sudah benar
+3.  **Install Dependensi JavaScript:**
+    ```bash
+    npm install
+    ```
 
-php artisan migrate --seed
+4.  **Konfigurasi Environment:**
+    Salin file `.env.example` menjadi `.env` dan sesuaikan isinya, terutama untuk koneksi database.
+    ```bash
+    cp .env.example .env
+    ```
+    Kemudian, generate kunci aplikasi:
+    ```bash
+    php artisan key:generate
+    ```
 
-# Install dependency frontend
+5.  **Migrasi Database:**
+    Jalankan migrasi untuk membuat tabel-tabel yang dibutuhkan. Jika Anda ingin menjalankan seeder juga, tambahkan flag `--seed`.
+    ```bash
+    php artisan migrate
+    ```
 
-npm install && npm run build
+6.  **Menjalankan Aplikasi:**
+    Jalankan server pengembangan bawaan Laravel dan kompilasi aset dengan `npm run build`.
+
+    ```bash
+    # Kompilasi aset (jalankan setiap ada perubahan pada file CSS/JS)
+    npm run build
+    ```
+
+    ```bash
+    # Jalankan server
+    php artisan serve
+    ```
+
+Aplikasi Anda sekarang dapat diakses di `http://localhost:8000`.
