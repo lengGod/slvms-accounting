@@ -369,4 +369,21 @@ class Debtor extends Model
             'transaction_id' => $transactionId,
         ]);
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($debtor) {
+            // Hapus semua transaksi terkait
+            $debtor->transactions()->each(function ($transaction) {
+                $transaction->delete();
+            });
+
+            // Hapus semua titipan terkait
+            $debtor->titipans()->each(function ($titipan) {
+                $titipan->delete();
+            });
+        });
+    }
 }

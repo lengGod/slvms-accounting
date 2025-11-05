@@ -135,12 +135,6 @@ class DebtorController extends Controller
 
     public function destroy(Debtor $debtor)
     {
-        $relations = $debtor->checkRelations();
-
-        if (!empty($relations)) {
-            return back()->with('error', 'Debitur tidak dapat dihapus karena masih memiliki relasi: ' . implode(', ', array_keys($relations)));
-        }
-
         $debtor->delete();
 
         return redirect()->route('debtors.index')->with('success', 'Debitur berhasil dihapus');
