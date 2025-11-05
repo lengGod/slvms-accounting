@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Transaction;
 use App\Models\Debtor;
+use App\Models\Titipan;
 use Illuminate\Http\Request;
 use Carbon\Carbon;
 use App\Exports\KartuMutasiExport;
@@ -164,9 +165,9 @@ class ReportController extends Controller
 
         $totalPiutang = Transaction::where('type', 'piutang')->sum('amount');
         $totalPembayaran = Transaction::where('type', 'pembayaran')->sum('amount');
-        $saldoAkhir = $totalPiutang - $totalPembayaran;
+        $totalSaldoTitipan = Titipan::sum('amount');
 
-        return view('reports.debit_piutang', compact('debtors', 'totalPiutang', 'totalPembayaran', 'saldoAkhir'));
+        return view('reports.debit_piutang', compact('debtors', 'totalPiutang', 'totalPembayaran', 'totalSaldoTitipan'));
     }
 
     /**

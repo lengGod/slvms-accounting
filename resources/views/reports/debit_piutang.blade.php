@@ -63,21 +63,21 @@
 
                 <div class="col-md-4">
                     <div
-                        class="card shadow-sm border-0 {{ $saldoAkhir >= 0 ? 'bg-info bg-opacity-10' : 'bg-danger bg-opacity-10' }} h-100">
+                        class="card shadow-sm border-0 {{ $totalSaldoTitipan >= 0 ? 'bg-info bg-opacity-10' : 'bg-danger bg-opacity-10' }} h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
                                 <div class="flex-shrink-0">
                                     <div
-                                        class="p-3 rounded-circle {{ $saldoAkhir >= 0 ? 'bg-info bg-opacity-20' : 'bg-danger bg-opacity-20' }}">
+                                        class="p-3 rounded-circle {{ $totalSaldoTitipan >= 0 ? 'bg-info bg-opacity-20' : 'bg-danger bg-opacity-20' }}">
                                         <i
-                                            class="bi bi-wallet2 {{ $saldoAkhir >= 0 ? 'text-info' : 'text-danger' }} fs-4"></i>
+                                            class="bi bi-wallet2 {{ $totalSaldoTitipan >= 0 ? 'text-info' : 'text-danger' }} fs-4"></i>
                                     </div>
                                 </div>
                                 <div class="flex-grow-1 ms-3">
-                                    <h6 class="card-title text-muted mb-1">Saldo Akhir</h6>
+                                    <h6 class="card-title text-muted mb-1">Total Saldo Titipan</h6>
                                     <p
-                                        class="card-text fs-5 fw-bold mb-0 {{ $saldoAkhir >= 0 ? 'text-info' : 'text-danger' }}">
-                                        Rp {{ number_format($saldoAkhir, 0, ',', '.') }}</p>
+                                        class="card-text fs-5 fw-bold mb-0 {{ $totalSaldoTitipan >= 0 ? 'text-info' : 'text-danger' }}">
+                                        Rp {{ number_format($totalSaldoTitipan, 0, ',', '.') }}</p>
                                 </div>
                             </div>
                         </div>
@@ -143,7 +143,7 @@
                                     <td>Total</td>
                                     <td class="text-end">Rp {{ number_format($totalPiutang, 0, ',', '.') }}</td>
                                     <td class="text-end">Rp {{ number_format($totalPembayaran, 0, ',', '.') }}</td>
-                                    <td class="text-end">Rp {{ number_format($saldoAkhir, 0, ',', '.') }}</td>
+                                    <td class="text-end">Rp {{ number_format($totalSaldoTitipan, 0, ',', '.') }}</td>
                                     <td></td>
                                 </tr>
                             </tfoot>
