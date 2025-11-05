@@ -491,9 +491,6 @@ class TransactionController extends Controller
     {
         DB::beginTransaction();
         try {
-            // Delete associated Titipan records first
-            Titipan::where('transaction_id', $transaction->id)->delete();
-
             // Then delete the transaction
             $transaction->delete();
 

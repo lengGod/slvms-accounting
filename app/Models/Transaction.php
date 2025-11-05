@@ -145,4 +145,16 @@ class Transaction extends Model
     {
         return 'Rp ' . number_format($this->total_alokasi, 0, ',', '.');
     }
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::deleting(function ($transaction) {
+            // Hapus semua titipan yang terkait dengan transaksi ini
+            $transaction->debtor->titipans()->where('transaction_id', $transaction->id)->each(function ($titipan) {
+                $titipan->delete();
+            });
+        });
+    }
 }
