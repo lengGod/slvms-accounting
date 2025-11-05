@@ -81,4 +81,23 @@ Sebelum memulai, pastikan Anda telah menginstal perangkat lunak berikut di kompu
     php artisan serve
     ```
 
-Aplikasi Anda sekarang dapat diakses di `http://localhost:8000`.
+### Mengakses Aplikasi dari Jaringan Lokal (Multiuser)
+
+Jika Anda ingin mengakses aplikasi dari perangkat lain di jaringan lokal yang sama (misalnya, untuk pengujian di perangkat seluler atau kolaborasi):
+
+1.  **Temukan Alamat IP Lokal Anda:**
+    *   **Windows:** Buka Command Prompt dan ketik `ipconfig`. Cari alamat IPv4 Anda (biasanya dimulai dengan `192.168.x.x` atau `10.x.x.x`).
+    *   **macOS/Linux:** Buka Terminal dan ketik `ifconfig` atau `ip addr`. Cari alamat `inet` Anda.
+
+2.  **Jalankan Server dengan Host IP Lokal:**
+    Ganti `<YOUR_LOCAL_IP>` dengan alamat IP yang Anda temukan.
+    ```bash
+    php artisan serve --host=<YOUR_LOCAL_IP>
+    ```
+
+3.  **Akses dari Perangkat Lain:**
+    Dari perangkat lain di jaringan yang sama, buka browser dan navigasikan ke `http://<YOUR_LOCAL_IP>:8000`.
+
+    **Catatan Penting:** Pastikan firewall di komputer Anda mengizinkan koneksi masuk ke port `8000`.
+
+Aplikasi Anda sekarang dapat diakses di `http://localhost:8000` atau `http://<YOUR_LOCAL_IP>:8000`.
