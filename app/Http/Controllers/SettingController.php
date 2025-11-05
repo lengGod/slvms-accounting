@@ -36,7 +36,7 @@ class SettingController extends Controller
                 'max:255',
                 Rule::unique('users')->ignore($user->id),
             ],
-            'phone' => 'nullable|string|max:20',
+
             'avatar' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
         ]);
 
@@ -47,8 +47,7 @@ class SettingController extends Controller
         }
 
         $user->name = $request->name;
-        $user->email = $request->email;
-        $user->phone = $request->phone;
+
 
         // Handle avatar upload
         if ($request->hasFile('avatar')) {
@@ -206,7 +205,13 @@ class SettingController extends Controller
      */
     public function createBackup(Request $request)
     {
-        // This is a simplified example. In a real application, you would use a package like spatie/laravel-backup
+        // Check if mysqldump is available
+        $mysqldumpPath = shell_exec('where mysqldump');
+        if (empty($mysqldumpPath)) {
+            return redirect()->route('settings.backup')
+                ->with('error', 'mysqldump command not found. Please make sure it is installed and in your system\'s PATH.');
+        }
+
         $filename = 'backup_' . date('Y_m_d_His') . '.sql';
         $path = storage_path('app/backups/' . $filename);
 
@@ -215,10 +220,28 @@ class SettingController extends Controller
             mkdir(dirname($path), 0755, true);
         }
 
-        // Create backup (this is a simplified example)
-        // In a real application, you would use mysqldump or a package
-        $command = "mysqldump --user=" . env('DB_USERNAME') . " --password=" . env('DB_PASSWORD') . " --host=" . env('DB_HOST') . " " . env('DB_DATABASE') . " > " . $path;
-        exec($command);
+        $command = sprintf(
+            'mysqldump --user=%s --password=%s --host=%s %s > %s',
+            escapeshellarg(env('DB_USERNAME')),
+            escapeshellarg(env('DB_PASSWORD')),
+            escapeshellarg(env('DB_HOST')),
+            escapeshellarg(env('DB_DATABASE')),
+            escapeshellarg($path)
+        );
+
+        $returnVar = 0;
+        $output = [];
+        exec($command, $output, $returnVar);
+
+        if ($returnVar !== 0) {
+            return redirect()->route('settings.backup')
+                ->with('error', 'Failed to create backup. Error: ' . implode("\n", $output));
+        }
+
+        if (!file_exists($path) || filesize($path) === 0) {
+            return redirect()->route('settings.backup')
+                ->with('error', 'Failed to create backup file or the backup file is empty.');
+        }
 
         return redirect()->route('settings.backup')
             ->with('success', 'Backup berhasil dibuat.');
