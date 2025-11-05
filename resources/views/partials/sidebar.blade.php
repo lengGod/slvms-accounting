@@ -1,8 +1,6 @@
 <aside>
     <div class="brand-header">
-        <div class="bg-primary text-white p-2 rounded">
-            <i class="bi bi-credit-card"></i>
-        </div>
+        <img src="{{ asset('favicon.ico') }}" alt="Logo" height="45">
         <h1 class="h5 mb-0 text-dark">SLVMS</h1>
         <button class="sidebar-close btn d-md-none ms-auto">
             <i class="bi bi-x-lg"></i>
