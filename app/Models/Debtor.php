@@ -143,10 +143,8 @@ class Debtor extends Model
     {
         $transactionPokok = $this->transactions()->sum('bagi_pokok');
 
-        // Add positive bagi_pokok from titipan adjustments
-        $titipanPokok = $this->titipans()
-            ->where('bagi_pokok', '>', 0) // Only positive bagi_pokok from titipan adjustments
-            ->sum('bagi_pokok');
+        // PERBAIKAN: Akumulasi total dari semua riwayat titipan debitur
+        $titipanPokok = $this->titipans()->sum('bagi_pokok');
 
         return $transactionPokok + $titipanPokok;
     }
@@ -168,10 +166,8 @@ class Debtor extends Model
     {
         $transactionHasil = $this->transactions()->sum('bagi_hasil');
 
-        // Add positive bagi_hasil from titipan adjustments
-        $titipanHasil = $this->titipans()
-            ->where('bagi_hasil', '>', 0) // Only positive bagi_hasil from titipan adjustments
-            ->sum('bagi_hasil');
+        // PERBAIKAN: Akumulasi total dari semua riwayat titipan debitur
+        $titipanHasil = $this->titipans()->sum('bagi_hasil');
 
         return $transactionHasil + $titipanHasil;
     }

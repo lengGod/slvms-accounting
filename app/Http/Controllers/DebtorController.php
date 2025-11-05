@@ -189,29 +189,16 @@ class DebtorController extends Controller
 
         // If the initial balance is positive, it should only be reflected in the titipans table
         if ($totalAmount > 0) {
-            // Create a transaction record with 0 amount for audit trail purposes
-            $transaction = Transaction::create([
-                'debtor_id' => $debtor->id,
-                'transaction_date' => $date,
-                'type' => 'pembayaran', // Still 'pembayaran' type, but amount is 0
-                'amount' => $totalAmount,
-                'bagi_pokok' => $pokokBalance,
-                'bagi_hasil' => $bagiHasilBalance,
-                'description' => 'Saldo Awal (Titipan)',
-                'user_id' => Auth::id(),
-            ]);
-
-            // Record the initial positive balance as a titipan adjustment
             $debtor->recordTitipanAdjustment(
                 $totalAmount,
-                'Saldo awal dari pembuatan debitur (Ref Transaksi #' . $transaction->id . ')',
-                $transaction->id,
-                0,
-                0
+                'Saldo Awal (Titipan)',
+                null, // No associated transaction
+                $pokokBalance,
+                $bagiHasilBalance
             );
         } else { // If the initial balance is negative (piutang)
             // Create a transaction for the initial piutang
-            $transaction = Transaction::create([
+            Transaction::create([
                 'debtor_id' => $debtor->id,
                 'transaction_date' => $date,
                 'type' => 'piutang',
@@ -229,7 +216,9 @@ class DebtorController extends Controller
      */
     private function removeInitialBalanceRecords($debtor)
     {
-        $debtor->titipans()->where('keterangan', 'like', '%Saldo awal%')->delete();
-        $debtor->transactions()->where('description', 'Saldo Awal')->delete();
+        // Remove initial titipan
+        $debtor->titipans()->where('keterangan', 'Saldo Awal (Titipan)')->delete();
+        // Remove initial transaction
+        $debtor->transactions()->where('description', 'Saldo Awal (Piutang)')->delete();
     }
 }

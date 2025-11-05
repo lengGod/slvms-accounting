@@ -144,9 +144,13 @@ class TransactionController extends Controller
                 $remainingBagiPokok = 0;
 
                 if ($totalOriginalAllocation > 0) {
-                    $ratio = $remainingPiutang / $originalPiutangAmount;
-                    $remainingBagiHasil = ($validated['bagi_hasil'] ?? 0) * $ratio;
-                    $remainingBagiPokok = ($validated['bagi_pokok'] ?? 0) * $ratio;
+                    if ($piutangAmount > 0) {
+                        $ratio = $remainingPiutang / $piutangAmount;
+                        $remainingBagiHasil = ($validated['bagi_hasil'] ?? 0) * $ratio;
+                        $remainingBagiPokok = ($validated['bagi_pokok'] ?? 0) * $ratio;
+                    } else {
+                        $remainingBagiPokok = $remainingPiutang;
+                    }
                 } else {
                     // If no original allocation, assume remaining piutang is all pokok or all hasil, for simplicity, let's put it all in pokok if not specified.
                     $remainingBagiPokok = $remainingPiutang;
