@@ -32,6 +32,14 @@
                             @enderror
                         </div>
                         <div class="col-md-6">
+                            <label for="code" class="form-label">Kode</label>
+                            <input type="text" class="form-control" id="code" name="code"
+                                value="{{ old('code', $debtor->code) }}">
+                            @error('code')
+                                <div class="text-danger small">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="col-md-6">
                             <label for="phone" class="form-label">No. Telepon</label>
                             <input type="text" class="form-control" id="phone" name="phone"
                                 value="{{ old('phone', $debtor->phone) }}">
