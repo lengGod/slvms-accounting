@@ -36,7 +36,8 @@
                             <i class="bi bi-journal-text fs-3 me-3"></i>
                             <div>
                                 <h6 class="card-title mb-2">Total Piutang</h6>
-                                <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalPiutang, 0, ',', '.') }}</p>
+                                <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalPiutang, 0, ',', '.') }}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -50,7 +51,8 @@
                             <i class="bi bi-cash-coin fs-3 me-3"></i>
                             <div>
                                 <h6 class="card-title mb-2">Total Pembayaran</h6>
-                                <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalPembayaran, 0, ',', '.') }}</p>
+                                <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalPembayaran, 0, ',', '.') }}
+                                </p>
                             </div>
                         </div>
                     </div>
@@ -64,7 +66,8 @@
                             <i class="bi bi-wallet2 fs-3 me-3"></i>
                             <div>
                                 <h6 class="card-title mb-2">Total Saldo Titipan</h6>
-                                <p class="card-text fs-5 fw-bold mb-0">Rp {{ number_format($totalSaldoTitipan, 0, ',', '.') }}</p>
+                                <p class="card-text fs-5 fw-bold mb-0">Rp
+                                    {{ number_format($totalSaldoTitipan, 0, ',', '.') }}</p>
                             </div>
                         </div>
                     </div>
@@ -77,9 +80,6 @@
             <div class="card-header bg-white border-bottom">
                 <div class="d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Aktivitas Transaksi Terbaru</h5>
-                    <a href="{{ route('transactions.index') }}" class="btn btn-sm btn-outline-primary">
-                        Lihat Semua <i class="bi bi-arrow-right"></i>
-                    </a>
                 </div>
             </div>
             <div class="card-body p-0">
