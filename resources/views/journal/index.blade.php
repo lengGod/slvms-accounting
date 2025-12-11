@@ -70,7 +70,6 @@
                                 <th>Debitur</th>
                                 <th>Tipe</th>
                                 <th>Jumlah</th>
-                                <th>Status</th>
                                 <th>Aksi</th>
                             </tr>
                         </thead>
@@ -108,17 +107,13 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge bg-{{ $transaction->type == 'piutang' ? 'info' : 'success' }}">
+                                        <span
+                                            class="badge bg-{{ $transaction->type == 'piutang' ? 'danger' : 'success' }}">
                                             {{ ucfirst($transaction->type) }}
                                         </span>
                                     </td>
                                     <td class="{{ $transaction->type == 'piutang' ? 'text-danger' : 'text-success' }}">
                                         {{ $transaction->formatted_amount }}
-                                    </td>
-                                    <td>
-                                        <span class="badge bg-{{ $transaction->status_color }}">
-                                            {{ $transaction->status_label }}
-                                        </span>
                                     </td>
                                     <td>
                                         <div class="d-flex gap-2">
