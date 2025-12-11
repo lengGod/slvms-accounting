@@ -1,31 +1,61 @@
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    th, td {
+        border: 1px solid #dddddd;
+        text-align: left;
+        padding: 8px;
+    }
+    thead th {
+        background-color: #f2f2f2;
+        font-weight: bold;
+    }
+    .text-center {
+        text-align: center;
+    }
+    .text-end {
+        text-align: right;
+    }
+    h1, h2 {
+        text-align: center;
+    }
+</style>
+
+<div>
+    <h1>SLV Accounting</h1>
+    <h2>Laporan Debit Piutang</h2>
+</div>
 <table>
     <thead>
         <tr>
+            <th>Kode</th>
             <th>Nama Debitur</th>
-            <th>Total Piutang</th>
-            <th>Total Pembayaran</th>
-            <th>Saldo</th>
-            <th>Status</th>
+            <th class="text-end">Total Piutang</th>
+            <th class="text-end">Total Pembayaran</th>
+            <th class="text-end">Saldo</th>
+            <th class="text-center">Status</th>
         </tr>
     </thead>
     <tbody>
-        @foreach ($debtors as $debtor)
+        @foreach ($debtorsByCode->flatten() as $debtor)
             <tr>
+                <td>{{ $debtor->code ?: 'Tanpa Kode' }}</td>
                 <td>{{ $debtor->name }}</td>
-                <td>Rp {{ number_format($debtor->total_piutang, 0, ',', '.') }}</td>
-                <td>Rp {{ number_format($debtor->total_pembayaran, 0, ',', '.') }}</td>
-                <td>Rp {{ number_format($debtor->current_balance, 0, ',', '.') }}</td>
-                <td>{{ ucfirst(str_replace('_', ' ', $debtor->debtor_status)) }}</td>
+                <td class="text-end">{{ $debtor->total_piutang }}</td>
+                <td class="text-end">{{ $debtor->total_pembayaran }}</td>
+                <td class="text-end">{{ $debtor->current_balance }}</td>
+                <td class="text-center">{{ ucfirst(str_replace('_', ' ', $debtor->debtor_status)) }}</td>
             </tr>
         @endforeach
     </tbody>
     <tfoot>
         <tr>
-            <td><strong>Total</strong></td>
-            <td><strong>Rp {{ number_format($totalPiutang, 0, ',', '.') }}</strong></td>
-            <td><strong>Rp {{ number_format($totalPembayaran, 0, ',', '.') }}</strong></td>
-            <td><strong>Rp {{ number_format($saldoAkhir, 0, ',', '.') }}</strong></td>
-            <td></td>
+            <td colspan="2"><strong>Total</strong></td>
+            <td class="text-end"><strong>{{ $totalPiutang }}</strong></td>
+            <td class="text-end"><strong>{{ $totalPembayaran }}</strong></td>
+            <td colspan="2"></td>
         </tr>
     </tfoot>
 </table>
