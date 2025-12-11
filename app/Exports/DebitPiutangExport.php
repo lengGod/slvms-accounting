@@ -13,19 +13,23 @@ class DebitPiutangExport implements FromView, WithTitle, ShouldAutoSize
 {
     public function view(): View
     {
-        $debtors = Debtor::with(['transactions' => function ($query) {
+        $allDebtors = Debtor::with(['transactions' => function ($query) {
             $query->latest()->take(5);
         }])->get();
 
+        $debtorsByCode = $allDebtors
+            ->filter(function ($debtor) {
+                return $debtor->debtor_status === 'belum_lunas';
+            })
+            ->groupBy('code');
+
         $totalPiutang = Transaction::where('type', 'piutang')->sum('amount');
         $totalPembayaran = Transaction::where('type', 'pembayaran')->sum('amount');
-        $saldoAkhir = $totalPiutang - $totalPembayaran;
 
         return view('exports.debit_piutang', [
-            'debtors' => $debtors,
+            'debtorsByCode' => $debtorsByCode,
             'totalPiutang' => $totalPiutang,
             'totalPembayaran' => $totalPembayaran,
-            'saldoAkhir' => $saldoAkhir
         ]);
     }
 
