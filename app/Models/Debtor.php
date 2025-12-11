@@ -11,6 +11,7 @@ class Debtor extends Model
 
     protected $fillable = [
         'name',
+        'code',
         'address',
         'phone',
         'initial_balance',
@@ -56,42 +57,26 @@ class Debtor extends Model
         return $this->hasMany(Titipan::class);
     }
 
-    /**
-     * Get the current balance attribute
-     * PERBAIKAN: Saldo saat ini = Total Titipan (uang yang benar-benar kita pegang)
-     */
     public function getCurrentBalanceAttribute()
     {
         return $this->saldo_pokok + $this->saldo_bagi_hasil;
     }
 
-    /**
-     * Get the formatted balance attribute
-     */
     public function getFormattedBalanceAttribute()
     {
         return 'Rp ' . number_format($this->current_balance, 0, ',', '.');
     }
 
-    /**
-     * Get the formatted initial balance attribute
-     */
     public function getFormattedInitialBalanceAttribute()
     {
         return 'Rp ' . number_format($this->initial_balance, 0, ',', '.');
     }
 
-    /**
-     * Get the formatted joined at attribute
-     */
     public function getFormattedJoinedAtAttribute()
     {
         return $this->joined_at ? $this->joined_at->format('d M Y') : '-';
     }
 
-    /**
-     * Get the total piutang attribute
-     */
     public function getTotalPiutangAttribute()
     {
         return $this->transactions()
@@ -99,9 +84,6 @@ class Debtor extends Model
             ->sum('amount');
     }
 
-    /**
-     * Get the total pembayaran attribute
-     */
     public function getTotalPembayaranAttribute()
     {
         return $this->transactions()
@@ -109,81 +91,45 @@ class Debtor extends Model
             ->sum('amount');
     }
 
-    /**
-     * Get the total titipan attribute
-     * PERBAIKAN: Hitung total titipan yang masih aktif
-     */
     public function getTotalTitipanAttribute()
     {
         return $this->titipans()->sum('amount');
     }
 
-    /**
-     * Get the formatted total titipan
-     */
     public function getFormattedTotalTitipanAttribute()
     {
         return 'Rp ' . number_format($this->total_titipan, 0, ',', '.');
     }
 
-    /**
-     * Get the saldo akhir attribute
-     */
     public function getSaldoAkhirAttribute()
     {
         return $this->current_balance;
     }
 
-    /**
-     * Get the saldo pokok attribute
-     * PERBAIKAN: Akumulasi total dari semua riwayat transaksi debitur
-     * (piutang pokok - pembayaran pokok)
-     */
     public function getSaldoPokokAttribute()
     {
         $transactionPokok = $this->transactions()->sum('bagi_pokok');
-
-        // PERBAIKAN: Akumulasi total dari semua riwayat titipan debitur
         $titipanPokok = $this->titipans()->sum('bagi_pokok');
-
         return $transactionPokok + $titipanPokok;
     }
 
-    /**
-     * Get the formatted saldo pokok attribute
-     */
     public function getFormattedSaldoPokokAttribute()
     {
         return 'Rp ' . number_format($this->saldo_pokok, 0, ',', '.');
     }
 
-    /**
-     * Get the saldo bagi hasil attribute
-     * PERBAIKAN: Akumulasi total dari semua riwayat transaksi debitur
-     * (piutang bagi hasil - pembayaran bagi hasil)
-     */
     public function getSaldoBagiHasilAttribute()
     {
         $transactionHasil = $this->transactions()->sum('bagi_hasil');
-
-        // PERBAIKAN: Akumulasi total dari semua riwayat titipan debitur
         $titipanHasil = $this->titipans()->sum('bagi_hasil');
-
         return $transactionHasil + $titipanHasil;
     }
 
-    /**
-     * Get the formatted saldo bagi hasil attribute
-     */
     public function getFormattedSaldoBagiHasilAttribute()
     {
         return 'Rp ' . number_format($this->saldo_bagi_hasil, 0, ',', '.');
     }
 
-    /**
-     * Get the debtor status attribute
-     * PERBAIKAN: Berdasarkan total saldo (transaksi + titipan)
-     */
     public function getDebtorStatusAttribute()
     {
         $balance = $this->current_balance;
@@ -197,10 +143,6 @@ class Debtor extends Model
         }
     }
 
-    /**
-     * Get the keterangan piutang attribute
-     * PERBAIKAN: Berdasarkan total saldo (transaksi + titipan)
-     */
     public function getKeteranganPiutangAttribute()
     {
         $balance = $this->current_balance;
@@ -214,9 +156,6 @@ class Debtor extends Model
         }
     }
 
-    /**
-     * Get the initial balance with type information
-     */
     public function getInitialBalanceWithTypeAttribute()
     {
         if ($this->initial_balance != 0) {
@@ -240,19 +179,22 @@ class Debtor extends Model
         return null;
     }
 
-    /**
-     * Check if debtor has any titipan
-     * PERBAIKAN: Cek apakah ada titipan yang masih aktif
-     */
     public function hasTitipan()
     {
         return $this->titipans()->where('amount', '>', 0)->exists();
     }
 
     /**
-     * Gunakan titipan untuk membayar piutang baru
+     * FIXED: Gunakan titipan untuk membayar piutang baru
+     * Alokasi berdasarkan proporsi PIUTANG BARU, bukan titipan yang ada
+     * 
+     * @param float $piutangAmount Total piutang baru
+     * @param int|null $transactionId Transaction ID
+     * @param float $piutangPokok Jumlah pokok dari piutang baru
+     * @param float $piutangHasil Jumlah bagi hasil dari piutang baru
+     * @return array
      */
-    public function useTitipanForNewPiutang($piutangAmount, $transactionId = null)
+    public function useTitipanForNewPiutang($piutangAmount, $transactionId = null, $piutangPokok = 0, $piutangHasil = 0)
     {
         if ($this->total_titipan <= 0) {
             return [
@@ -264,33 +206,32 @@ class Debtor extends Model
         }
 
         $availableTitipan = $this->total_titipan;
-        $usedTitipan = 0;
-        $remainingPiutang = $piutangAmount;
-
-        // Hitung berapa titipan yang akan digunakan
         $usedTitipan = min($availableTitipan, $piutangAmount);
         $remainingPiutang = $piutangAmount - $usedTitipan;
 
-        // Gunakan titipan yang dihitung
         if ($usedTitipan > 0) {
-            // Get current total bagi_pokok and bagi_hasil from all existing titipans
-            $totalTitipanPokok = $this->titipans()->sum('bagi_pokok');
-            $totalTitipanHasil = $this->titipans()->sum('bagi_hasil');
-            $totalTitipanAmount = $this->total_titipan; // This is the sum of 'amount'
-
+            // FIXED: Hitung alokasi berdasarkan proporsi PIUTANG BARU
             $usedPokok = 0;
             $usedHasil = 0;
 
-            if ($totalTitipanAmount > 0) {
-                $usedPokok = ($totalTitipanPokok / $totalTitipanAmount) * $usedTitipan;
-                $usedHasil = ($totalTitipanHasil / $totalTitipanAmount) * $usedTitipan;
+            $totalPiutangAllocation = $piutangPokok + $piutangHasil;
+
+            if ($totalPiutangAllocation > 0) {
+                // Hitung proporsi dari piutang baru
+                $pokokRatio = $piutangPokok / $totalPiutangAllocation;
+                $hasilRatio = $piutangHasil / $totalPiutangAllocation;
+
+                // Alokasikan titipan sesuai proporsi piutang baru
+                $usedPokok = $usedTitipan * $pokokRatio;
+                $usedHasil = $usedTitipan * $hasilRatio;
             } else {
-                // Fallback if totalTitipanAmount is 0 (should not happen if $usedTitipan > 0)
-                $usedPokok = $usedTitipan; // Assume all pokok if no proportion
+                // Jika tidak ada alokasi spesifik, gunakan semua untuk pokok
+                $usedPokok = $usedTitipan;
+                $usedHasil = 0;
             }
 
             $this->recordTitipanAdjustment(
-                -$usedTitipan, // Negative amount for usage
+                -$usedTitipan,
                 'Penggunaan titipan untuk piutang #' . $transactionId,
                 $transactionId,
                 -$usedPokok,
@@ -302,28 +243,120 @@ class Debtor extends Model
             'success' => true,
             'message' => 'Berhasil menggunakan titipan sebesar Rp ' . number_format($usedTitipan, 0, ',', '.') . ' untuk piutang baru',
             'used_titipan' => $usedTitipan,
-            'remaining_piutang' => $remainingPiutang
+            'remaining_piutang' => $remainingPiutang,
+            'used_pokok' => $usedPokok ?? 0,
+            'used_hasil' => $usedHasil ?? 0,
         ];
     }
 
+    /**
+     * Record a titipan adjustment with AUTOMATIC ALLOCATION
+     * 
+     * @param float $amount Total amount of titipan (positive for addition, negative for usage)
+     * @param string $keterangan Description
+     * @param int|null $transactionId Related transaction ID
+     * @param float $bagiPokok Bagi pokok (if manually specified)
+     * @param float $bagiHasil Bagi hasil (if manually specified)
+     */
+    public function recordTitipanAdjustment($amount, $keterangan, $transactionId = null, $bagiPokok = null, $bagiHasil = null)
+    {
+        // Check if an existing titipan for this transaction already exists
+        $existingTitipan = null;
+        if ($transactionId) {
+            $existingTitipan = Titipan::where('debtor_id', $this->id)
+                ->where('transaction_id', $transactionId)
+                ->where('keterangan', 'like', 'Kelebihan pembayaran%')
+                ->first();
+        }
 
+        // AUTOMATIC ALLOCATION LOGIC
+        // If bagiPokok and bagiHasil are both null (not manually specified), calculate automatically
+        if ($bagiPokok === null && $bagiHasil === null && $amount != 0) {
+            $allocation = $this->calculateTitipanAllocation(abs($amount));
 
+            // Apply the sign (positive for addition, negative for usage)
+            if ($amount < 0) {
+                $bagiPokok = -$allocation['pokok'];
+                $bagiHasil = -$allocation['hasil'];
+            } else {
+                $bagiPokok = $allocation['pokok'];
+                $bagiHasil = $allocation['hasil'];
+            }
+        }
 
+        // Ensure values are not null
+        $bagiPokok = $bagiPokok ?? 0;
+        $bagiHasil = $bagiHasil ?? 0;
 
+        if ($existingTitipan) {
+            // Update existing titipan
+            $existingTitipan->amount += round($amount, 2);
+            $existingTitipan->bagi_pokok += round($bagiPokok, 2);
+            $existingTitipan->bagi_hasil += round($bagiHasil, 2);
+            $existingTitipan->tanggal = now();
+            $existingTitipan->user_id = auth()->id();
+            $existingTitipan->save();
+        } else {
+            // Create new titipan
+            Titipan::create([
+                'debtor_id' => $this->id,
+                'amount' => round($amount, 2),
+                'bagi_pokok' => round($bagiPokok, 2),
+                'bagi_hasil' => round($bagiHasil, 2),
+                'tanggal' => now(),
+                'keterangan' => $keterangan,
+                'user_id' => auth()->id(),
+                'transaction_id' => $transactionId,
+            ]);
+        }
+    }
+
+    /**
+     * Calculate automatic allocation for titipan based on outstanding debt proportion
+     * 
+     * @param float $amount The amount to allocate
+     * @return array ['pokok' => float, 'hasil' => float]
+     */
+    protected function calculateTitipanAllocation($amount)
+    {
+        // Get current outstanding debt (negative values)
+        $saldoPokok = $this->saldo_pokok;
+        $saldoHasil = $this->saldo_bagi_hasil;
+
+        // Outstanding debt is negative, so we use abs() for calculation
+        $outstandingPokok = abs($saldoPokok < 0 ? $saldoPokok : 0);
+        $outstandingHasil = abs($saldoHasil < 0 ? $saldoHasil : 0);
+        $totalOutstanding = $outstandingPokok + $outstandingHasil;
+
+        // If there's no outstanding debt, allocate everything to pokok
+        if ($totalOutstanding <= 0) {
+            return [
+                'pokok' => $amount,
+                'hasil' => 0,
+            ];
+        }
+
+        // Calculate proportional allocation based on outstanding debt
+        $pokokRatio = $outstandingPokok / $totalOutstanding;
+        $hasilRatio = $outstandingHasil / $totalOutstanding;
+
+        return [
+            'pokok' => round($amount * $pokokRatio, 2),
+            'hasil' => round($amount * $hasilRatio, 2),
+        ];
+    }
 
     protected static function boot()
     {
         parent::boot();
 
         static::deleting(function ($debtor) {
-            // Delete all associated transactions
             $debtor->transactions()->each(function ($transaction) {
-                $transaction->delete(); // Use delete() method to trigger any Transaction model deleting events
+                $transaction->delete();
             });
 
-            // Delete all associated titipans
             $debtor->titipans()->each(function ($titipan) {
-                $titipan->delete(); // Use delete() method to trigger any Titipan model deleting events
+                $titipan->delete();
             });
         });
     }
@@ -343,64 +376,18 @@ class Debtor extends Model
         return $relations;
     }
 
-    /**
-     * Format currency for display
-     */
     public function formatCurrency($amount)
     {
         return 'Rp ' . number_format($amount, 0, ',', '.');
     }
 
-    /**
-     * Get the formatted total piutang attribute
-     */
     public function getFormattedTotalPiutangAttribute()
     {
         return 'Rp ' . number_format($this->total_piutang, 0, ',', '.');
     }
 
-    /**
-     * Get the formatted total pembayaran attribute
-     */
     public function getFormattedTotalPembayaranAttribute()
     {
         return 'Rp ' . number_format($this->total_pembayaran, 0, ',', '.');
-    }
-
-    /**
-     * Record a titipan adjustment (positive for creation, negative for usage).
-     */
-    public function recordTitipanAdjustment($amount, $keterangan, $transactionId = null, $bagiPokok = 0, $bagiHasil = 0)
-    {
-        // Check if an existing titipan for overpayment related to this transaction already exists
-        $existingTitipan = null;
-        if ($transactionId) {
-            $existingTitipan = Titipan::where('debtor_id', $this->id)
-                ->where('transaction_id', $transactionId)
-                ->where('keterangan', 'like', 'Kelebihan pembayaran%')
-                ->first();
-        }
-
-        if ($existingTitipan) {
-            // Update existing titipan
-            $existingTitipan->amount += round($amount, 2);
-            $existingTitipan->bagi_pokok += round($bagiPokok, 2);
-            $existingTitipan->bagi_hasil += round($bagiHasil, 2);
-            $existingTitipan->tanggal = now(); // Update timestamp
-            $existingTitipan->user_id = auth()->id(); // Update user
-            $existingTitipan->save();
-        } else {
-            // Create new titipan
-            Titipan::create([
-                'debtor_id' => $this->id,
-                'amount' => round($amount, 2),
-                'bagi_pokok' => round($bagiPokok, 2),
-                'bagi_hasil' => round($bagiHasil, 2),
-                'tanggal' => now(),
-                'keterangan' => $keterangan,
-                'user_id' => auth()->id(),
-                'transaction_id' => $transactionId,
-            ]);
-        }
     }
 }

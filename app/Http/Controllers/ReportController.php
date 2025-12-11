@@ -41,36 +41,11 @@ class ReportController extends Controller
      */
     public function showKartuMutasi($id, Request $request)
     {
-        $startDate = $request->start_date ?: Carbon::now()->startOfMonth()->format('Y-m-d');
-        $endDate = $request->end_date ?: Carbon::now()->endOfMonth()->format('Y-m-d');
-
         $debtor = Debtor::findOrFail($id);
 
-        // Saldo awal before the filtered date, considering both transactions and titipans
-        $saldoAwalPokok = Transaction::where('debtor_id', $id)
-            ->where('transaction_date', '<', $startDate)
-            ->sum('bagi_pokok');
-        $saldoAwalPokok += Titipan::where('debtor_id', $id)
-            ->where('tanggal', '<', $startDate)
-            ->sum('bagi_pokok');
-
-        $saldoAwalBagiHasil = Transaction::where('debtor_id', $id)
-            ->where('transaction_date', '<', $startDate)
-            ->sum('bagi_hasil');
-        $saldoAwalBagiHasil += Titipan::where('debtor_id', $id)
-            ->where('tanggal', '<', $startDate)
-            ->sum('bagi_hasil');
-
-        $saldoAwalTotal = $saldoAwalPokok + $saldoAwalBagiHasil;
-
-        // Get all transactions and titipans within the date range
-        $transactions = Transaction::where('debtor_id', $id)
-            ->whereBetween('transaction_date', [$startDate, $endDate])
-            ->get();
-
-        $titipans = Titipan::where('debtor_id', $id)
-            ->whereBetween('tanggal', [$startDate, $endDate])
-            ->get();
+        // Get all transactions and titipans for the debtor
+        $transactions = Transaction::where('debtor_id', $id)->get();
+        $titipans = Titipan::where('debtor_id', $id)->get();
 
         // Merge and sort transactions and titipans into a single event log
         $events = collect([]);
@@ -89,6 +64,12 @@ class ReportController extends Controller
         }
 
         foreach ($titipans as $titipan) {
+            // FIX: Exclude titipan adjustments that are recorded alongside a 'pembayaran' transaction
+            // to avoid visual duplication in the report. The 'pembayaran' transaction serves as the single recap.
+            if (str_starts_with($titipan->keterangan, 'Penggunaan titipan untuk piutang')) {
+                continue;
+            }
+
             $events->push([
                 'id' => $titipan->id,
                 'date' => $titipan->tanggal,
@@ -105,12 +86,7 @@ class ReportController extends Controller
 
         return view('reports.kartuMutasi.show', compact(
             'debtor',
-            'startDate',
-            'endDate',
-            'sortedEvents',
-            'saldoAwalPokok',
-            'saldoAwalBagiHasil',
-            'saldoAwalTotal'
+            'sortedEvents'
         ));
     }
     /**
@@ -118,11 +94,9 @@ class ReportController extends Controller
      */
     public function exportKartuMutasi(Request $request)
     {
-        $startDate = $request->start_date ?: Carbon::now()->startOfMonth()->format('Y-m-d');
-        $endDate = $request->end_date ?: Carbon::now()->endOfMonth()->format('Y-m-d');
         $debtorId = $request->debtor_id;
 
-        return Excel::download(new KartuMutasiExport($startDate, $endDate, $debtorId), 'kartu_mutasi_' . date('Y-m-d') . '.xlsx');
+        return Excel::download(new KartuMutasiExport($debtorId), 'kartu_mutasi_' . date('Y-m-d') . '.xlsx');
     }
 
     /**
@@ -198,15 +172,27 @@ class ReportController extends Controller
      */
     public function debitPiutang(Request $request)
     {
-        $debtors = Debtor::with(['transactions' => function ($query) {
+        // Get all debtors first, since `debtor_status` is an appended attribute
+        $allDebtors = Debtor::with(['transactions' => function ($query) {
             $query->latest()->take(5);
         }])->get();
 
+        // Filter to only include debtors with 'belum_lunas' status and group by code
+        $debtorsByCode = $allDebtors
+            ->filter(function ($debtor) {
+                return $debtor->debtor_status === 'belum_lunas';
+            })
+            ->groupBy('code');
+
+        // Calculate totals based on ALL debtors, not just the filtered ones
         $totalPiutang = Transaction::where('type', 'piutang')->sum('amount');
         $totalPembayaran = Transaction::where('type', 'pembayaran')->sum('amount');
-        $totalSaldoTitipan = Titipan::sum('amount');
 
-        return view('reports.debit_piutang', compact('debtors', 'totalPiutang', 'totalPembayaran', 'totalSaldoTitipan'));
+        return view('reports.debit_piutang', [
+            'debtorsByCode' => $debtorsByCode,
+            'totalPiutang' => $totalPiutang,
+            'totalPembayaran' => $totalPembayaran,
+        ]);
     }
 
     /**

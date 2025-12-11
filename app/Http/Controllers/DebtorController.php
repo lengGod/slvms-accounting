@@ -39,6 +39,7 @@ class DebtorController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'balance_type' => 'required|array|min:1',
@@ -60,6 +61,7 @@ class DebtorController extends Controller
         // Simpan debitur
         $debtor = Debtor::create([
             'name' => $validated['name'],
+            'code' => $validated['code'],
             'address' => $validated['address'],
             'phone' => $validated['phone'],
             'initial_balance' => $totalBalance,
@@ -95,6 +97,7 @@ class DebtorController extends Controller
     {
         $validated = $request->validate([
             'name' => 'required|string|max:255',
+            'code' => 'nullable|string|max:50',
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'balance_type' => 'required|array|min:1',
@@ -116,6 +119,7 @@ class DebtorController extends Controller
         // Update data debitur
         $debtor->update([
             'name' => $validated['name'],
+            'code' => $validated['code'],
             'address' => $validated['address'],
             'phone' => $validated['phone'],
             'initial_balance' => $totalBalance,
