@@ -23,7 +23,7 @@
 
             <!-- Stats Cards -->
             <div class="row g-4 mb-4">
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="card shadow-sm border-0 bg-warning bg-opacity-10 h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -42,7 +42,7 @@
                     </div>
                 </div>
 
-                <div class="col-md-4">
+                <div class="col-md-6">
                     <div class="card shadow-sm border-0 bg-success bg-opacity-10 h-100">
                         <div class="card-body">
                             <div class="d-flex align-items-center">
@@ -60,29 +60,6 @@
                         </div>
                     </div>
                 </div>
-
-                <div class="col-md-4">
-                    <div
-                        class="card shadow-sm border-0 {{ $totalSaldoTitipan >= 0 ? 'bg-info bg-opacity-10' : 'bg-danger bg-opacity-10' }} h-100">
-                        <div class="card-body">
-                            <div class="d-flex align-items-center">
-                                <div class="flex-shrink-0">
-                                    <div
-                                        class="p-3 rounded-circle {{ $totalSaldoTitipan >= 0 ? 'bg-info bg-opacity-20' : 'bg-danger bg-opacity-20' }}">
-                                        <i
-                                            class="bi bi-wallet2 {{ $totalSaldoTitipan >= 0 ? 'text-info' : 'text-danger' }} fs-4"></i>
-                                    </div>
-                                </div>
-                                <div class="flex-grow-1 ms-3">
-                                    <h6 class="card-title text-muted mb-1">Total Saldo Titipan</h6>
-                                    <p
-                                        class="card-text fs-5 fw-bold mb-0 {{ $totalSaldoTitipan >= 0 ? 'text-info' : 'text-danger' }}">
-                                        Rp {{ number_format($totalSaldoTitipan, 0, ',', '.') }}</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
             </div>
 
             <!-- Table -->
@@ -92,6 +69,7 @@
                         <table class="table table-hover align-middle">
                             <thead>
                                 <tr>
+                                    <th>Kode</th>
                                     <th>Nama Debitur</th>
                                     <th class="text-end">Total Piutang</th>
                                     <th class="text-end">Total Pembayaran</th>
@@ -100,8 +78,9 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($debtors as $debtor)
+                                @forelse ($debtorsByCode->flatten() as $debtor)
                                     <tr>
+                                        <td>{{ $debtor->code ?: 'Tanpa Kode' }}</td>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="flex-shrink-0">
@@ -115,36 +94,39 @@
                                                 </div>
                                             </div>
                                         </td>
-                                        <td class="text-end">Rp {{ number_format($debtor->total_piutang, 0, ',', '.') }}
+                                        <td class="text-end">Rp
+                                            {{ number_format($debtor->total_piutang, 0, ',', '.') }}
                                         </td>
-                                        <td class="text-end">Rp {{ number_format($debtor->total_pembayaran, 0, ',', '.') }}
+                                        <td class="text-end">Rp
+                                            {{ number_format($debtor->total_pembayaran, 0, ',', '.') }}
                                         </td>
                                         <td class="text-end {{ $debtor->current_balance < 0 ? 'text-danger' : '' }}">
                                             Rp {{ number_format($debtor->current_balance, 0, ',', '.') }}
                                         </td>
                                         <td class="text-center">
                                             <span
-                                                class="badge 
+                                                class="badge
                                             @if ($debtor->debtor_status == 'lunas') bg-success
                                             @elseif ($debtor->debtor_status == 'belum_lunas') bg-warning
-                                            @else bg-danger @endif">
+                                            @elseif ($debtor->debtor_status == 'Titipan') bg-info
+                                            @else bg-secondary @endif">
                                                 {{ ucfirst(str_replace('_', ' ', $debtor->debtor_status)) }}
                                             </span>
                                         </td>
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="5" class="text-center py-4 text-muted">Tidak ada data debitur</td>
+                                        <td colspan="6" class="text-center py-4 text-muted">Tidak ada data debitur yang
+                                            memiliki piutang.</td>
                                     </tr>
                                 @endforelse
                             </tbody>
                             <tfoot>
                                 <tr class="table-primary fw-bold">
-                                    <td>Total</td>
+                                    <td colspan="2">Total</td>
                                     <td class="text-end">Rp {{ number_format($totalPiutang, 0, ',', '.') }}</td>
                                     <td class="text-end">Rp {{ number_format($totalPembayaran, 0, ',', '.') }}</td>
-                                    <td class="text-end">Rp {{ number_format($totalSaldoTitipan, 0, ',', '.') }}</td>
-                                    <td></td>
+                                    <td colspan="2"></td>
                                 </tr>
                             </tfoot>
                         </table>

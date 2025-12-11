@@ -149,12 +149,6 @@
                                 Total Pembayaran: <strong class="text-success">Rp
                                     {{ number_format($totalPembayaran, 0, ',', '.') }}</strong>
                             </div>
-                            <div>
-                                Saldo: <strong
-                                    class="{{ $totalPiutang > $totalPembayaran ? 'text-danger' : 'text-success' }}">
-                                    Rp {{ number_format($totalPiutang - $totalPembayaran, 0, ',', '.') }}
-                                </strong>
-                            </div>
                         </div>
                     </div>
                     <div class="text-muted">
