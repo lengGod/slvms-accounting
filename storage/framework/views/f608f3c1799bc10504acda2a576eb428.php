@@ -1,8 +1,8 @@
-@extends('layouts.app')
 
-@php($pageTitle = 'Debit Piutang')
 
-@section('content')
+<?php ($pageTitle = 'Debit Piutang'); ?>
+
+<?php $__env->startSection('content'); ?>
     <div id="print-content">
         <div class="container-fluid p-4">
             <!-- Header Section -->
@@ -15,7 +15,7 @@
                     <button class="btn btn-outline-secondary me-2 no-print" onclick="printContent()">
                         <i class="bi bi-printer me-1"></i> Cetak
                     </button>
-                    <a href="{{ route('reports.export-debit-piutang', ['month' => request('month', \Carbon\Carbon::now()->format('Y-m'))]) }}" class="btn btn-success no-print">
+                    <a href="<?php echo e(route('reports.export-debit-piutang', ['month' => request('month', \Carbon\Carbon::now()->format('Y-m'))])); ?>" class="btn btn-success no-print">
                         <i class="bi bi-download me-1"></i> Export Excel
                     </a>
                 </div>
@@ -24,11 +24,11 @@
             <!-- Filter Form -->
             <div class="card shadow-sm mb-4">
                 <div class="card-body">
-                    <form action="{{ route('reports.debit-piutang') }}" method="GET" class="row g-3 align-items-center">
+                    <form action="<?php echo e(route('reports.debit-piutang')); ?>" method="GET" class="row g-3 align-items-center">
                         <div class="col-md-3">
                             <label for="month" class="form-label">Filter per Bulan</label>
                             <input type="month" id="month" name="month" class="form-control"
-                                value="{{ request('month', \Carbon\Carbon::now()->format('Y-m')) }}">
+                                value="<?php echo e(request('month', \Carbon\Carbon::now()->format('Y-m'))); ?>">
                         </div>
                         <div class="col-md-3">
                             <label class="form-label">&nbsp;</label>
@@ -55,7 +55,7 @@
                                 <div class="flex-grow-1 ms-3">
                                     <h6 class="card-title text-muted mb-1">Total Piutang</h6>
                                     <p class="card-text fs-5 fw-bold mb-0 text-warning">Rp
-                                        {{ number_format($totalPiutang, 0, ',', '.') }}</p>
+                                        <?php echo e(number_format($totalPiutang, 0, ',', '.')); ?></p>
                                 </div>
                             </div>
                         </div>
@@ -74,7 +74,7 @@
                                 <div class="flex-grow-1 ms-3">
                                     <h6 class="card-title text-muted mb-1">Total Pembayaran</h6>
                                     <p class="card-text fs-5 fw-bold mb-0 text-success">Rp
-                                        {{ number_format($totalPembayaran, 0, ',', '.') }}</p>
+                                        <?php echo e(number_format($totalPembayaran, 0, ',', '.')); ?></p>
                                 </div>
                             </div>
                         </div>
@@ -98,9 +98,9 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                @forelse ($debtorsByCode->flatten() as $debtor)
+                                <?php $__empty_1 = true; $__currentLoopData = $debtorsByCode->flatten(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $debtor): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                                     <tr>
-                                        <td>{{ $debtor->code ?: 'Tanpa Kode' }}</td>
+                                        <td><?php echo e($debtor->code ?: 'Tanpa Kode'); ?></td>
                                         <td>
                                             <div class="d-flex align-items-center">
                                                 <div class="flex-shrink-0">
@@ -109,43 +109,47 @@
                                                     </div>
                                                 </div>
                                                 <div>
-                                                    <div class="fw-medium">{{ $debtor->name }}</div>
-                                                    <div class="small text-muted">{{ $debtor->phone }}</div>
+                                                    <div class="fw-medium"><?php echo e($debtor->name); ?></div>
+                                                    <div class="small text-muted"><?php echo e($debtor->phone); ?></div>
                                                 </div>
                                             </div>
                                         </td>
                                         <td class="text-end">Rp
-                                            {{ number_format($debtor->total_piutang, 0, ',', '.') }}
+                                            <?php echo e(number_format($debtor->total_piutang, 0, ',', '.')); ?>
+
                                         </td>
                                         <td class="text-end">Rp
-                                            {{ number_format($debtor->total_pembayaran, 0, ',', '.') }}
+                                            <?php echo e(number_format($debtor->total_pembayaran, 0, ',', '.')); ?>
+
                                         </td>
-                                        <td class="text-end {{ $debtor->current_balance < 0 ? 'text-danger' : '' }}">
-                                            Rp {{ number_format($debtor->current_balance, 0, ',', '.') }}
+                                        <td class="text-end <?php echo e($debtor->current_balance < 0 ? 'text-danger' : ''); ?>">
+                                            Rp <?php echo e(number_format($debtor->current_balance, 0, ',', '.')); ?>
+
                                         </td>
                                         <td class="text-center">
                                             <span
                                                 class="badge
-                                            @if ($debtor->debtor_status == 'lunas') bg-success
-                                            @elseif ($debtor->debtor_status == 'belum_lunas') bg-warning
-                                            @elseif ($debtor->debtor_status == 'Titipan') bg-info
-                                            @else bg-secondary @endif">
-                                                {{ ucfirst(str_replace('_', ' ', $debtor->debtor_status)) }}
+                                            <?php if($debtor->debtor_status == 'lunas'): ?> bg-success
+                                            <?php elseif($debtor->debtor_status == 'belum_lunas'): ?> bg-warning
+                                            <?php elseif($debtor->debtor_status == 'Titipan'): ?> bg-info
+                                            <?php else: ?> bg-secondary <?php endif; ?>">
+                                                <?php echo e(ucfirst(str_replace('_', ' ', $debtor->debtor_status))); ?>
+
                                             </span>
                                         </td>
                                     </tr>
-                                @empty
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                     <tr>
                                         <td colspan="6" class="text-center py-4 text-muted">Tidak ada data debitur yang
                                             memiliki piutang.</td>
                                     </tr>
-                                @endforelse
+                                <?php endif; ?>
                             </tbody>
                             <tfoot>
                                 <tr class="table-primary fw-bold">
                                     <td colspan="2">Total</td>
-                                    <td class="text-end">Rp {{ number_format($totalPiutang, 0, ',', '.') }}</td>
-                                    <td class="text-end">Rp {{ number_format($totalPembayaran, 0, ',', '.') }}</td>
+                                    <td class="text-end">Rp <?php echo e(number_format($totalPiutang, 0, ',', '.')); ?></td>
+                                    <td class="text-end">Rp <?php echo e(number_format($totalPembayaran, 0, ',', '.')); ?></td>
                                     <td colspan="2"></td>
                                 </tr>
                             </tfoot>
@@ -155,4 +159,6 @@
             </div>
         </div>
     </div>
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\slv-acounting\resources\views/reports/debit_piutang.blade.php ENDPATH**/ ?>

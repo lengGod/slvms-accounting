@@ -18,7 +18,12 @@ class DebtorController extends Controller
 
     public function index(Request $request)
     {
-        $query = Debtor::query();
+        $query = Debtor::query()
+            ->withSum('transactions as total_bagi_pokok', 'bagi_pokok')
+            ->withSum('transactions as total_bagi_hasil', 'bagi_hasil')
+            ->withSum('titipans as titipan_bagi_pokok', 'bagi_pokok')
+            ->withSum('titipans as titipan_bagi_hasil', 'bagi_hasil')
+            ->withSum('titipans as total_titipan_sum', 'amount');
 
         if ($request->has('search') && !empty($request->search)) {
             $search = $request->search;

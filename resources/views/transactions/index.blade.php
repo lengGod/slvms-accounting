@@ -53,7 +53,7 @@
                             <tr>
                                 <th>ID Transaksi</th>
                                 <th>Jenis</th>
-                                <th>Nama Pelanggan</th>
+                                <th>Nama Debitur</th>
                                 <th>Bagi Hasil</th>
                                 <th>Pokok</th>
                                 <th>Jumlah</th>
@@ -96,7 +96,8 @@
                                                 <i class="bi bi-pencil"></i>
                                             </a>
                                             <button type="button" class="btn btn-sm btn-outline-danger delete-btn"
-                                                data-action="{{ route('transactions.destroy', $transaction->id) }}" title="Hapus">
+                                                data-action="{{ route('transactions.destroy', $transaction->id) }}"
+                                                title="Hapus">
                                                 <i class="bi bi-trash"></i>
                                             </button>
                                         </div>

@@ -4,9 +4,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" href="<?php echo e(asset('favicon.ico')); ?>">
     <title>SLVMS</title>
-    <!-- Urutan yang benar -->
-    <link href="<?php echo e(asset('css/app.css')); ?>" rel="stylesheet">
+    <!-- Vite for CSS and JS (Turbo included in app.js) -->
+    <?php echo app('Illuminate\Foundation\Vite')(['resources/css/app.css', 'resources/js/app.js']); ?>
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -131,17 +133,12 @@
     <?php echo $__env->make('partials.confirm-modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
     <?php echo $__env->make('partials.validation-modal', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Fungsi JavaScript untuk cetak -->
     <script>
-        function printContent() {
-            // ... kode print tetap sama ...
-        }
-
         // Toggle sidebar untuk mobile
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('turbo:load', function() {
             const sidebarToggle = document.getElementById('sidebar-toggle');
             const sidebar = document.querySelector('aside');
 
@@ -260,7 +257,7 @@
             };
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('turbo:load', function() {
             var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
             var confirmModalForm = document.getElementById('confirmModalForm');
 
@@ -277,7 +274,7 @@
 
     <?php if($errors->any()): ?>
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('turbo:load', function() {
             var validationModal = new bootstrap.Modal(document.getElementById('validationModal'));
             validationModal.show();
         });

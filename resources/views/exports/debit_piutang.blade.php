@@ -26,6 +26,7 @@
 <div>
     <h1>SLV Accounting</h1>
     <h2>Laporan Debit Piutang</h2>
+    <h3>Laporan Per Bulan: {{ \Carbon\Carbon::createFromFormat('Y-m', $month)->format('F Y') }}</h3>
 </div>
 <table>
     <thead>

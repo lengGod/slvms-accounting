@@ -380,7 +380,7 @@
     </style>
 
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('turbo:load', function() {
             // Initialize Bootstrap dropdowns
             const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
 

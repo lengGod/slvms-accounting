@@ -93,6 +93,11 @@ class Debtor extends Model
 
     public function getTotalTitipanAttribute()
     {
+        // Use pre-calculated attribute from withSum if available
+        if (array_key_exists('total_titipan_sum', $this->attributes)) {
+            return $this->total_titipan_sum ?? 0;
+        }
+
         return $this->titipans()->sum('amount');
     }
 
@@ -108,6 +113,11 @@ class Debtor extends Model
 
     public function getSaldoPokokAttribute()
     {
+        // Use pre-calculated attribute from withSum if available
+        if (array_key_exists('total_bagi_pokok', $this->attributes) && array_key_exists('titipan_bagi_pokok', $this->attributes)) {
+            return ($this->total_bagi_pokok ?? 0) + ($this->titipan_bagi_pokok ?? 0);
+        }
+
         $transactionPokok = $this->transactions()->sum('bagi_pokok');
         $titipanPokok = $this->titipans()->sum('bagi_pokok');
         return $transactionPokok + $titipanPokok;
@@ -120,6 +130,11 @@ class Debtor extends Model
 
     public function getSaldoBagiHasilAttribute()
     {
+        // Use pre-calculated attribute from withSum if available
+        if (array_key_exists('total_bagi_hasil', $this->attributes) && array_key_exists('titipan_bagi_hasil', $this->attributes)) {
+            return ($this->total_bagi_hasil ?? 0) + ($this->titipan_bagi_hasil ?? 0);
+        }
+
         $transactionHasil = $this->transactions()->sum('bagi_hasil');
         $titipanHasil = $this->titipans()->sum('bagi_hasil');
         return $transactionHasil + $titipanHasil;

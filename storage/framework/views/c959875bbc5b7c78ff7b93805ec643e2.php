@@ -1,14 +1,14 @@
 
 
-<?php ($pageTitle = 'Tambah Debitur'); ?>
+<?php ($pageTitle = 'Edit Debitur'); ?>
 
 <?php $__env->startSection('content'); ?>
     <div class="container-fluid p-4">
         <!-- Header Section -->
         <div class="row mb-4">
             <div class="col-md-8">
-                <h1 class="display-6 fw-bold">Tambah Debitur Baru</h1>
-                <p class="text-muted">Tambahkan debitur baru ke dalam sistem.</p>
+                <h1 class="display-6 fw-bold">Edit Debitur: <?php echo e($debtor->name); ?></h1>
+                <p class="text-muted">Perbarui informasi debitur.</p>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
                 <a href="<?php echo e(route('debtors.index')); ?>" class="btn btn-secondary">
@@ -19,13 +19,14 @@
 
         <div class="card shadow-sm">
             <div class="card-body">
-                <form action="<?php echo e(route('debtors.store')); ?>" method="POST" id="debtorForm">
+                <form action="<?php echo e(route('debtors.update', $debtor)); ?>" method="POST" id="debtorForm">
                     <?php echo csrf_field(); ?>
+                    <?php echo method_field('PUT'); ?>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="name" class="form-label">Nama Lengkap</label>
                             <input type="text" class="form-control" id="name" name="name"
-                                value="<?php echo e(old('name')); ?>" required>
+                                value="<?php echo e(old('name', $debtor->name)); ?>" required>
                             <?php $__errorArgs = ['name'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -40,7 +41,7 @@ unset($__errorArgs, $__bag); ?>
                         <div class="col-md-6">
                             <label for="code" class="form-label">Kode</label>
                             <input type="text" class="form-control" id="code" name="code"
-                                value="<?php echo e(old('code')); ?>">
+                                value="<?php echo e(old('code', $debtor->code)); ?>">
                             <?php $__errorArgs = ['code'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -55,7 +56,7 @@ unset($__errorArgs, $__bag); ?>
                         <div class="col-md-6">
                             <label for="phone" class="form-label">No. Telepon</label>
                             <input type="text" class="form-control" id="phone" name="phone"
-                                value="<?php echo e(old('phone')); ?>">
+                                value="<?php echo e(old('phone', $debtor->phone)); ?>">
                             <?php $__errorArgs = ['phone'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -70,7 +71,7 @@ unset($__errorArgs, $__bag); ?>
 
                         <div class="col-12">
                             <label for="address" class="form-label">Alamat</label>
-                            <textarea class="form-control" id="address" name="address" rows="2"><?php echo e(old('address')); ?></textarea>
+                            <textarea class="form-control" id="address" name="address" rows="2"><?php echo e(old('address', $debtor->address)); ?></textarea>
                             <?php $__errorArgs = ['address'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -86,7 +87,7 @@ unset($__errorArgs, $__bag); ?>
                         <div class="col-md-6">
                             <label for="joined_at" class="form-label">Tanggal Bergabung</label>
                             <input type="date" class="form-control" id="joined_at" name="joined_at"
-                                value="<?php echo e(old('joined_at', now()->format('Y-m-d'))); ?>" required>
+                                value="<?php echo e(old('joined_at', $debtor->joined_at->format('Y-m-d'))); ?>" required>
                             <?php $__errorArgs = ['joined_at'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
@@ -103,9 +104,11 @@ unset($__errorArgs, $__bag); ?>
                             <label for="category" class="form-label">Kategori</label>
                             <select class="form-select" id="category" name="category" required>
                                 <option value="">Pilih Kategori</option>
-                                <option value="internal" <?php echo e(old('category') == 'internal' ? 'selected' : ''); ?>>Internal
+                                <option value="internal"
+                                    <?php echo e(old('category', $debtor->category) == 'internal' ? 'selected' : ''); ?>>Internal
                                 </option>
-                                <option value="eksternal" <?php echo e(old('category') == 'eksternal' ? 'selected' : ''); ?>>Eksternal
+                                <option value="eksternal"
+                                    <?php echo e(old('category', $debtor->category) == 'eksternal' ? 'selected' : ''); ?>>Eksternal
                                 </option>
                             </select>
                             <?php $__errorArgs = ['category'];
@@ -127,7 +130,7 @@ unset($__errorArgs, $__bag); ?>
                                 <div class="form-check">
                                     <input class="form-check-input balance-type-check" type="checkbox" id="type_pokok"
                                         name="balance_type[]" value="pokok"
-                                        <?php echo e(in_array('pokok', old('balance_type', [])) ? 'checked' : ''); ?>>
+                                        <?php echo e(in_array('pokok', old('balance_type', explode(',', $debtor->initial_balance_type))) ? 'checked' : ''); ?>>
                                     <label class="form-check-label" for="type_pokok">
                                         <strong>Pokok</strong>
                                         <small class="text-muted d-block">Dana pokok dari debitur</small>
@@ -136,7 +139,7 @@ unset($__errorArgs, $__bag); ?>
                                 <div class="form-check mt-2">
                                     <input class="form-check-input balance-type-check" type="checkbox" id="type_bagi_hasil"
                                         name="balance_type[]" value="bagi_hasil"
-                                        <?php echo e(in_array('bagi_hasil', old('balance_type', [])) ? 'checked' : ''); ?>>
+                                        <?php echo e(in_array('bagi_hasil', old('balance_type', explode(',', $debtor->initial_balance_type))) ? 'checked' : ''); ?>>
                                     <label class="form-check-label" for="type_bagi_hasil">
                                         <strong>Bagi Hasil</strong>
                                         <small class="text-muted d-block">Keuntungan/bagi hasil dari debitur</small>
@@ -167,7 +170,8 @@ unset($__errorArgs, $__bag); ?>
                                                                          <div class="input-group">
                                                                             <span class="input-group-text">Rp</span>
                                                                             <input type="number" class="form-control" id="pokok_balance" name="pokok_balance"
-                                                                                value="<?php echo e(old('pokok_balance')); ?>" step="any">
+                                                                                value="<?php echo e(old('pokok_balance', $debtor->initial_pokok_balance ?? 0)); ?>"
+                                                                                step="any">
                                                                         </div>                                    <div class="form-text">
                                         <i class="bi bi-info-circle me-1"></i>
                                         <span id="pokokBalanceHint">Nilai negatif untuk piutang, positif untuk
@@ -193,7 +197,8 @@ unset($__errorArgs, $__bag); ?>
                                                                          <div class="input-group">
                                                                             <span class="input-group-text">Rp</span>
                                                                             <input type="number" class="form-control" id="bagi_hasil_balance"
-                                                                                name="bagi_hasil_balance" value="<?php echo e(old('bagi_hasil_balance')); ?>"
+                                                                                name="bagi_hasil_balance"
+                                                                                value="<?php echo e(old('bagi_hasil_balance', $debtor->initial_bagi_hasil_balance ?? 0)); ?>"
                                                                                 step="any">
                                                                         </div>                                    <div class="form-text">
                                         <i class="bi bi-info-circle me-1"></i>
@@ -216,9 +221,9 @@ unset($__errorArgs, $__bag); ?>
 
                         <!-- Input hidden untuk total saldo awal dan jenis saldo -->
                         <input type="hidden" id="initial_balance" name="initial_balance"
-                            value="<?php echo e(old('initial_balance', 0)); ?>">
+                            value="<?php echo e(old('initial_balance', $debtor->initial_balance)); ?>">
                         <input type="hidden" id="initial_balance_type" name="initial_balance_type"
-                            value="<?php echo e(old('initial_balance_type', '')); ?>">
+                            value="<?php echo e(old('initial_balance_type', $debtor->initial_balance_type)); ?>">
 
                         <!-- Preview informasi saldo awal -->
                         <div class="col-12">
@@ -422,4 +427,4 @@ unset($__errorArgs, $__bag); ?>
     <?php $__env->stopPush(); ?>
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\slv-acounting\resources\views/debtors/create.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\slv-acounting\resources\views/debtors/edit.blade.php ENDPATH**/ ?>

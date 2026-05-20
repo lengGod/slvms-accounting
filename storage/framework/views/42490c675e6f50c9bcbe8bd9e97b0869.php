@@ -100,26 +100,7 @@
             </div>
         </div>
 
-        <!-- Filter Form -->
-        <div class="card shadow-sm mb-4">
-            <div class="card-body">
-                <form action="<?php echo e(route('reports.kartu-mutasi.show', $debtor->id)); ?>" method="GET" class="row g-3">
-                    <div class="col-md-5">
-                        <label class="form-label">Dari Tanggal</label>
-                        <input type="date" name="start_date" class="form-control" value="<?php echo e($startDate); ?>">
-                    </div>
-                    <div class="col-md-5">
-                        <label class="form-label">Sampai Tanggal</label>
-                        <input type="date" name="end_date" class="form-control" value="<?php echo e($endDate); ?>">
-                    </div>
-                    <div class="col-md-2 d-flex align-items-end">
-                        <button type="submit" class="btn btn-secondary w-100">
-                            <i class="bi bi-funnel"></i> Filter
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+
 
         <!-- Transaction Table -->
         <div class="card shadow-sm">
@@ -156,9 +137,9 @@
                         </thead>
                         <tbody>
                             <?php
-                                $saldoPokok = $saldoAwalPokok;
-                                $saldoBagiHasil = $saldoAwalBagiHasil;
-                                $saldoTotal = $saldoAwalTotal;
+                                $saldoPokok = 0;
+                                $saldoBagiHasil = 0;
+                                $saldoTotal = 0;
                             ?>
                             <?php if(count($sortedEvents) > 0): ?>
                                 <?php $__currentLoopData = $sortedEvents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $transaction): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -175,9 +156,11 @@
                                         ?>
 
                                         <?php if($type == 'piutang'): ?>
-                                            <td class="text-danger"><?php echo e(number_format($bagiPokok, 0, ',', '.')); ?></td>
-                                            <td class="text-danger"><?php echo e(number_format($bagiHasil, 0, ',', '.')); ?></td>
-                                            <td class="text-danger fw-bold"><?php echo e(number_format($amount, 0, ',', '.')); ?></td>
+                                            <td class="text-danger"><?php echo e(number_format(abs($bagiPokok), 0, ',', '.')); ?></td>
+                                            <td class="text-danger"><?php echo e(number_format(abs($bagiHasil), 0, ',', '.')); ?></td>
+                                            <td class="text-danger fw-bold"><?php echo e(number_format(abs($amount), 0, ',', '.')); ?>
+
+                                            </td>
                                             <td></td>
                                             <td></td>
                                             <td></td>
@@ -185,15 +168,20 @@
                                             <td></td>
                                             <td></td>
                                             <td></td>
-                                            <td class="text-success"><?php echo e(number_format($bagiPokok, 0, ',', '.')); ?></td>
-                                            <td class="text-success"><?php echo e(number_format($bagiHasil, 0, ',', '.')); ?></td>
-                                            <td class="text-success fw-bold"><?php echo e(number_format($amount, 0, ',', '.')); ?></td>
+                                            <td class="text-success"><?php echo e(number_format(abs($bagiPokok), 0, ',', '.')); ?></td>
+                                            <td class="text-success"><?php echo e(number_format(abs($bagiHasil), 0, ',', '.')); ?></td>
+                                            <td class="text-success fw-bold"><?php echo e(number_format(abs($amount), 0, ',', '.')); ?>
+
+                                            </td>
                                         <?php endif; ?>
 
                                         <?php
-                                            $saldoPokok += $bagiPokok;
-                                            $saldoBagiHasil += $bagiHasil;
-                                            $saldoTotal += $amount;
+                                            // FIX: Don't add payment from titipan to running total, as it's already accounted for.
+                                            if (!str_starts_with($transaction['description'], 'Pembayaran menggunakan titipan')) {
+                                                $saldoPokok += $bagiPokok;
+                                                $saldoBagiHasil += $bagiHasil;
+                                                $saldoTotal += $amount;
+                                            }
                                         ?>
 
                                         <td class="<?php echo e($saldoPokok >= 0 ? 'text-success' : 'text-danger'); ?>">

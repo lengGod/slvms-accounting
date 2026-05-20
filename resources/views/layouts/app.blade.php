@@ -6,8 +6,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="icon" href="{{ asset('favicon.ico') }}">
     <title>SLVMS</title>
-    <!-- Urutan yang benar -->
-    <link href="{{ asset('css/app.css') }}" rel="stylesheet">
+    <!-- Vite for CSS and JS (Turbo included in app.js) -->
+    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
     <style>
@@ -132,17 +133,12 @@
     @include('partials.confirm-modal')
     @include('partials.validation-modal')
 
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Fungsi JavaScript untuk cetak -->
     <script>
-        function printContent() {
-            // ... kode print tetap sama ...
-        }
-
         // Toggle sidebar untuk mobile
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('turbo:load', function() {
             const sidebarToggle = document.getElementById('sidebar-toggle');
             const sidebar = document.querySelector('aside');
 
@@ -261,7 +257,7 @@
             };
         }
 
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('turbo:load', function() {
             var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
             var confirmModalForm = document.getElementById('confirmModalForm');
 
@@ -278,7 +274,7 @@
 
     @if ($errors->any())
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('turbo:load', function() {
             var validationModal = new bootstrap.Modal(document.getElementById('validationModal'));
             validationModal.show();
         });

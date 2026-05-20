@@ -11,6 +11,7 @@ use App\Exports\KartuMutasiExport;
 use App\Exports\PiutangPerBulanExport;
 use App\Exports\PembayaranPerBulanExport;
 use App\Exports\DebitPiutangExport;
+use Illuminate\Support\Facades\DB;
 use Maatwebsite\Excel\Facades\Excel;
 
 class ReportController extends Controller
@@ -172,21 +173,60 @@ class ReportController extends Controller
      */
     public function debitPiutang(Request $request)
     {
-        // Get all debtors first, since `debtor_status` is an appended attribute
-        $allDebtors = Debtor::with(['transactions' => function ($query) {
-            $query->latest()->take(5);
-        }])->get();
+        $selectedMonth = $request->input('month', Carbon::now()->format('Y-m'));
+        $endDate = Carbon::createFromFormat('Y-m', $selectedMonth)->endOfMonth();
 
-        // Filter to only include debtors with 'belum_lunas' status and group by code
-        $debtorsByCode = $allDebtors
-            ->filter(function ($debtor) {
-                return $debtor->debtor_status === 'belum_lunas';
-            })
-            ->groupBy('code');
+        // Subquery for total piutang
+        $piutangQuery = Transaction::selectRaw('sum(amount)')
+            ->where('type', 'piutang')
+            ->where('debtor_id', DB::raw('debtors.id'))
+            ->where('transaction_date', '<=', $endDate);
 
-        // Calculate totals based on ALL debtors, not just the filtered ones
-        $totalPiutang = Transaction::where('type', 'piutang')->sum('amount');
-        $totalPembayaran = Transaction::where('type', 'pembayaran')->sum('amount');
+        // Subquery for total pembayaran
+        $pembayaranQuery = Transaction::selectRaw('sum(amount)')
+            ->where('type', 'pembayaran')
+            ->where('debtor_id', DB::raw('debtors.id'))
+            ->where('transaction_date', '<=', $endDate);
+
+        // Subquery for saldo pokok
+        $pokokQuery = Transaction::selectRaw('sum(bagi_pokok)')
+            ->where('debtor_id', DB::raw('debtors.id'))
+            ->where('transaction_date', '<=', $endDate);
+
+        // Subquery for saldo bagi hasil
+        $hasilQuery = Transaction::selectRaw('sum(bagi_hasil)')
+            ->where('debtor_id', DB::raw('debtors.id'))
+            ->where('transaction_date', '<=', $endDate);
+
+        $debtors = Debtor::select('id', 'name', 'code', 'phone')
+            ->selectSub($piutangQuery, 'total_piutang')
+            ->selectSub($pembayaranQuery, 'total_pembayaran')
+            ->selectSub($pokokQuery, 'saldo_pokok')
+            ->selectSub($hasilQuery, 'saldo_bagi_hasil')
+            ->get();
+
+        // Calculate balance and status, then filter
+        $filteredDebtors = $debtors->map(function ($debtor) {
+            $debtor->current_balance = ($debtor->saldo_pokok ?? 0) + ($debtor->saldo_bagi_hasil ?? 0);
+
+            if ($debtor->current_balance < 0) {
+                $debtor->debtor_status = 'belum_lunas';
+            } elseif ($debtor->current_balance > 0) {
+                $debtor->debtor_status = 'Titipan';
+            } else {
+                $debtor->debtor_status = 'lunas';
+            }
+            return $debtor;
+        })->filter(function ($debtor) {
+            return $debtor->debtor_status === 'belum_lunas';
+        });
+
+        // Group by code after filtering
+        $debtorsByCode = $filteredDebtors->groupBy('code');
+
+        // Calculate totals based on the selected month
+        $totalPiutang = Transaction::where('type', 'piutang')->where('transaction_date', '<=', $endDate)->sum('amount');
+        $totalPembayaran = Transaction::where('type', 'pembayaran')->where('transaction_date', '<=', $endDate)->sum('amount');
 
         return view('reports.debit_piutang', [
             'debtorsByCode' => $debtorsByCode,
@@ -200,6 +240,7 @@ class ReportController extends Controller
      */
     public function exportDebitPiutang(Request $request)
     {
-        return Excel::download(new DebitPiutangExport(), 'debit_piutang_' . date('Y-m-d') . '.xlsx');
+        $month = $request->input('month', Carbon::now()->format('Y-m'));
+        return Excel::download(new DebitPiutangExport($month), 'debit_piutang_' . $month . '.xlsx');
     }
 }
