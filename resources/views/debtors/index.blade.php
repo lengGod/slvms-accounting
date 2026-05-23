@@ -82,16 +82,10 @@
                                     <td>
                                         <span
                                             class="badge 
-                                        @if ($debtor->debtor_status == 'lunas') bg-success
-                                        @elseif ($debtor->debtor_status == 'belum_lunas') bg-warning
+                                        @if ($debtor->debtor_status == 'Lunas') bg-success
+                                        @elseif ($debtor->debtor_status == 'Belum Lunas') bg-warning text-dark
                                         @else bg-info @endif">
-                                            @if ($debtor->debtor_status == 'lunas')
-                                                Lunas
-                                            @elseif ($debtor->debtor_status == 'belum_lunas')
-                                                Belum Lunas
-                                            @else
-                                                Lebih Bayar
-                                            @endif
+                                            {{ $debtor->debtor_status }}
                                         </span>
                                     </td>
                                     <td>{{ $debtor->keterangan_piutang }}</td>

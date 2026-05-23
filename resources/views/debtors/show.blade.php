@@ -35,14 +35,6 @@
                                 <p>{{ $debtor->phone ?: '-' }}</p>
                             </div>
                             <div class="col-md-6 mb-3">
-                                <label class="form-label text-muted">Kategori</label>
-                                <p>
-                                    <span class="badge bg-{{ $debtor->category == 'internal' ? 'info' : 'warning' }}">
-                                        {{ ucfirst($debtor->category) }}
-                                    </span>
-                                </p>
-                            </div>
-                            <div class="col-md-6 mb-3">
                                 <label class="form-label text-muted">Tanggal Bergabung</label>
                                 <p>{{ $debtor->formatted_joined_at }}</p>
                             </div>
@@ -287,8 +279,8 @@
                             <label class="form-label text-muted">Status</label>
                             <p>
                                 <span
-                                    class="badge bg-{{ $debtor->debtor_status == 'lunas' ? 'success' : ($debtor->debtor_status == 'belum_lunas' ? 'warning' : 'info') }}">
-                                    {{ ucfirst(str_replace('_', ' ', $debtor->debtor_status)) }}
+                                    class="badge bg-{{ $debtor->debtor_status == 'Lunas' ? 'success' : ($debtor->debtor_status == 'Belum Lunas' ? 'warning' : 'info') }}">
+                                    {{ $debtor->debtor_status }}
                                 </span>
                             </p>
                         </div>

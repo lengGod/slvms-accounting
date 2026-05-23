@@ -1,5 +1,3 @@
-
-
 <?php ($pageTitle = 'Kartu Mutasi'); ?>
 
 <?php $__env->startSection('content'); ?>

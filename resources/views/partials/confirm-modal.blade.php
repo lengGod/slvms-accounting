@@ -2,12 +2,14 @@
 <div class="modal fade" id="confirmModal" tabindex="-1" aria-labelledby="confirmModalLabel" aria-hidden="true">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmModalLabel">Konfirmasi</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title" id="confirmModalLabel">
+                    <i class="bi bi-exclamation-triangle me-2"></i>Konfirmasi
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Tutup"></button>
             </div>
             <div class="modal-body">
-                Apakah Anda yakin ingin menghapus data ini?
+                Apakah Anda yakin ingin menghapus data ini? Aksi ini tidak dapat dibatalkan.
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
@@ -20,3 +22,20 @@
         </div>
     </div>
 </div>
+
+<script>
+    (function() {
+        const modalElement = document.getElementById('confirmModal');
+
+        function cleanupBackdrop() {
+            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+            document.body.classList.remove('modal-open');
+            document.body.style.overflow = '';
+            document.body.style.paddingRight = '';
+        }
+
+        if (modalElement) {
+            modalElement.addEventListener('hidden.bs.modal', cleanupBackdrop);
+        }
+    })();
+</script>

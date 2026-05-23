@@ -141,19 +141,30 @@
                                 $saldoBagiHasil = 0;
                                 $saldoTotal = 0;
                             ?>
+
                             <?php if(count($sortedEvents) > 0): ?>
                                 <?php $__currentLoopData = $sortedEvents; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $transaction): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    
+                                    <?php if($transaction['source'] !== 'transaction'): ?>
+                                        <?php continue; ?>
+                                    <?php endif; ?>
+
+                                    <?php
+                                        $bagiPokok = $transaction['pokok'] ?? 0;
+                                        $bagiHasil = $transaction['hasil'] ?? 0;
+                                        $amount = $transaction['total'] ?? 0;
+                                        $type = $transaction['type'] ?? '';
+
+                                        // Hitung saldo hanya dari transaksi utama
+                                        $saldoPokok += $bagiPokok;
+                                        $saldoBagiHasil += $bagiHasil;
+                                        $saldoTotal += $amount;
+                                    ?>
+
                                     <tr>
                                         <td><?php echo e($transaction['id'] ?? '-'); ?></td>
                                         <td><?php echo e(\Carbon\Carbon::parse($transaction['date'])->format('d M Y') ?? '-'); ?></td>
                                         <td><?php echo e($transaction['description'] ?? '-'); ?></td>
-
-                                        <?php
-                                            $bagiPokok = $transaction['pokok'] ?? 0;
-                                            $bagiHasil = $transaction['hasil'] ?? 0;
-                                            $amount = $transaction['total'] ?? 0;
-                                            $type = $transaction['type'] ?? '';
-                                        ?>
 
                                         <?php if($type == 'piutang'): ?>
                                             <td class="text-danger"><?php echo e(number_format(abs($bagiPokok), 0, ',', '.')); ?></td>
@@ -175,19 +186,14 @@
                                             </td>
                                         <?php endif; ?>
 
-                                        <?php
-                                            // FIX: Don't add payment from titipan to running total, as it's already accounted for.
-                                            if (!str_starts_with($transaction['description'], 'Pembayaran menggunakan titipan')) {
-                                                $saldoPokok += $bagiPokok;
-                                                $saldoBagiHasil += $bagiHasil;
-                                                $saldoTotal += $amount;
-                                            }
-                                        ?>
-
                                         <td class="<?php echo e($saldoPokok >= 0 ? 'text-success' : 'text-danger'); ?>">
-                                            <?php echo e(number_format($saldoPokok, 0, ',', '.')); ?></td>
+                                            <?php echo e(number_format($saldoPokok, 0, ',', '.')); ?>
+
+                                        </td>
                                         <td class="<?php echo e($saldoBagiHasil >= 0 ? 'text-success' : 'text-danger'); ?>">
-                                            <?php echo e(number_format($saldoBagiHasil, 0, ',', '.')); ?></td>
+                                            <?php echo e(number_format($saldoBagiHasil, 0, ',', '.')); ?>
+
+                                        </td>
                                         <td class="<?php echo e($saldoTotal >= 0 ? 'text-success' : 'text-danger'); ?>">
                                             <strong><?php echo e(number_format($saldoTotal, 0, ',', '.')); ?></strong>
                                         </td>
@@ -198,6 +204,8 @@
                                     <td colspan="12" class="text-center">Tidak ada transaksi pada periode ini.</td>
                                 </tr>
                             <?php endif; ?>
+
+                            
                             <tr class="table-active">
                                 <td colspan="3" class="text-end"><strong>Total</strong></td>
                                 <td class="text-danger">
@@ -210,13 +218,13 @@
                                     <strong><?php echo e(number_format($sortedEvents->where('type', 'piutang')->sum('total') ?? 0, 0, ',', '.')); ?></strong>
                                 </td>
                                 <td class="text-success">
-                                    <strong><?php echo e(number_format($sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('pokok') ?? 0, 0, ',', '.')); ?></strong>
+                                    <strong><?php echo e(number_format($sortedEvents->where('type', 'pembayaran')->sum('pokok') ?? 0, 0, ',', '.')); ?></strong>
                                 </td>
                                 <td class="text-success">
-                                    <strong><?php echo e(number_format($sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('hasil') ?? 0, 0, ',', '.')); ?></strong>
+                                    <strong><?php echo e(number_format($sortedEvents->where('type', 'pembayaran')->sum('hasil') ?? 0, 0, ',', '.')); ?></strong>
                                 </td>
                                 <td class="text-success">
-                                    <strong><?php echo e(number_format($sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('total') ?? 0, 0, ',', '.')); ?></strong>
+                                    <strong><?php echo e(number_format($sortedEvents->where('type', 'pembayaran')->sum('total') ?? 0, 0, ',', '.')); ?></strong>
                                 </td>
                                 <td class="<?php echo e($saldoPokok >= 0 ? 'text-success' : 'text-danger'); ?>">
                                     <strong><?php echo e(number_format($saldoPokok, 0, ',', '.')); ?></strong>
@@ -229,6 +237,7 @@
                                 </td>
                             </tr>
                         </tbody>
+
                     </table>
                 </div>
             </div>

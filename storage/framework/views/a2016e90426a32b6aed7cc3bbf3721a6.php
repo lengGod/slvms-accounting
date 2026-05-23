@@ -85,16 +85,11 @@
                                     <td>
                                         <span
                                             class="badge 
-                                        <?php if($debtor->debtor_status == 'lunas'): ?> bg-success
-                                        <?php elseif($debtor->debtor_status == 'belum_lunas'): ?> bg-warning
+                                        <?php if($debtor->debtor_status == 'Lunas'): ?> bg-success
+                                        <?php elseif($debtor->debtor_status == 'Belum Lunas'): ?> bg-warning text-dark
                                         <?php else: ?> bg-info <?php endif; ?>">
-                                            <?php if($debtor->debtor_status == 'lunas'): ?>
-                                                Lunas
-                                            <?php elseif($debtor->debtor_status == 'belum_lunas'): ?>
-                                                Belum Lunas
-                                            <?php else: ?>
-                                                Lebih Bayar
-                                            <?php endif; ?>
+                                            <?php echo e($debtor->debtor_status); ?>
+
                                         </span>
                                     </td>
                                     <td><?php echo e($debtor->keterangan_piutang); ?></td>

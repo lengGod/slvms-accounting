@@ -43,8 +43,7 @@ class DebtorController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50',
+            'name' => 'required|string|max:255|unique:debtors,name',
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'balance_type' => 'required|array|min:1',
@@ -52,7 +51,6 @@ class DebtorController extends Controller
             'pokok_balance' => 'required_if:balance_type,pokok|nullable|numeric',
             'bagi_hasil_balance' => 'required_if:balance_type,bagi_hasil|nullable|numeric',
             'joined_at' => 'nullable|date',
-            'category' => 'nullable|string|max:50',
         ]);
 
         // Hitung total saldo awal
@@ -66,7 +64,6 @@ class DebtorController extends Controller
         // Simpan debitur
         $debtor = Debtor::create([
             'name' => $validated['name'],
-            'code' => $validated['code'],
             'address' => $validated['address'],
             'phone' => $validated['phone'],
             'initial_balance' => $totalBalance,
@@ -74,7 +71,6 @@ class DebtorController extends Controller
             'initial_bagi_hasil_balance' => $bagiHasilBalance,
             'initial_balance_type' => $balanceType,
             'joined_at' => $validated['joined_at'] ?? now(),
-            'category' => $validated['category'],
         ]);
 
         // Tangani saldo awal
@@ -101,8 +97,7 @@ class DebtorController extends Controller
     public function update(Request $request, Debtor $debtor)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'code' => 'nullable|string|max:50',
+            'name' => 'required|string|max:255|unique:debtors,name,' . $debtor->id,
             'address' => 'nullable|string|max:255',
             'phone' => 'nullable|string|max:20',
             'balance_type' => 'required|array|min:1',
@@ -110,7 +105,6 @@ class DebtorController extends Controller
             'pokok_balance' => 'required_if:balance_type,pokok|nullable|numeric',
             'bagi_hasil_balance' => 'required_if:balance_type,bagi_hasil|nullable|numeric',
             'joined_at' => 'nullable|date',
-            'category' => 'nullable|string|max:50',
         ]);
 
         // Hitung total saldo awal
@@ -124,7 +118,6 @@ class DebtorController extends Controller
         // Update data debitur
         $debtor->update([
             'name' => $validated['name'],
-            'code' => $validated['code'],
             'address' => $validated['address'],
             'phone' => $validated['phone'],
             'initial_balance' => $totalBalance,
@@ -132,7 +125,6 @@ class DebtorController extends Controller
             'initial_bagi_hasil_balance' => $bagiHasilBalance,
             'initial_balance_type' => $balanceType,
             'joined_at' => $validated['joined_at'] ?? $debtor->joined_at,
-            'category' => $validated['category'],
         ]);
 
         // Jika saldo awal berubah, perbarui transaksi/titipan awal
@@ -201,13 +193,14 @@ class DebtorController extends Controller
             );
         } else { // If the initial balance is negative (piutang)
             // Create a transaction for the initial piutang
+            // We pass the absolute values and negate them here to ensure piutang is stored as negative in the DB
             Transaction::create([
                 'debtor_id' => $debtor->id,
                 'transaction_date' => $date,
                 'type' => 'piutang',
-                'amount' => $totalAmount, // Negative amount for piutang
-                'bagi_pokok' => $pokokBalance, // Negative for piutang
-                'bagi_hasil' => $bagiHasilBalance, // Negative for piutang
+                'amount' => -1 * abs($totalAmount), 
+                'bagi_pokok' => -1 * abs($pokokBalance),
+                'bagi_hasil' => -1 * abs($bagiHasilBalance),
                 'description' => 'Saldo Awal (Piutang)',
                 'user_id' => Auth::id(),
             ]);

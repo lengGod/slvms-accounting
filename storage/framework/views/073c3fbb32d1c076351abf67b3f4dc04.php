@@ -1,5 +1,3 @@
-
-
 <?php ($pageTitle = 'Detail Debitur'); ?>
 
 <?php $__env->startSection('content'); ?>
@@ -33,15 +31,6 @@
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-muted">No. Telepon</label>
                                 <p><?php echo e($debtor->phone ?: '-'); ?></p>
-                            </div>
-                            <div class="col-md-6 mb-3">
-                                <label class="form-label text-muted">Kategori</label>
-                                <p>
-                                    <span class="badge bg-<?php echo e($debtor->category == 'internal' ? 'info' : 'warning'); ?>">
-                                        <?php echo e(ucfirst($debtor->category)); ?>
-
-                                    </span>
-                                </p>
                             </div>
                             <div class="col-md-6 mb-3">
                                 <label class="form-label text-muted">Tanggal Bergabung</label>
@@ -302,8 +291,8 @@
                             <label class="form-label text-muted">Status</label>
                             <p>
                                 <span
-                                    class="badge bg-<?php echo e($debtor->debtor_status == 'lunas' ? 'success' : ($debtor->debtor_status == 'belum_lunas' ? 'warning' : 'info')); ?>">
-                                    <?php echo e(ucfirst(str_replace('_', ' ', $debtor->debtor_status))); ?>
+                                    class="badge bg-<?php echo e($debtor->debtor_status == 'Lunas' ? 'success' : ($debtor->debtor_status == 'Belum Lunas' ? 'warning' : 'info')); ?>">
+                                    <?php echo e($debtor->debtor_status); ?>
 
                                 </span>
                             </p>

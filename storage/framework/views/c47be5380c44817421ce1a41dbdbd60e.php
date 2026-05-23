@@ -11,6 +11,8 @@
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+    <link href="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.bootstrap5.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js"></script>
     <style>
         body {
             margin: 0;
@@ -257,29 +259,44 @@
             };
         }
 
-        document.addEventListener('turbo:load', function() {
-            var confirmModal = new bootstrap.Modal(document.getElementById('confirmModal'));
-            var confirmModalForm = document.getElementById('confirmModalForm');
+        (function() {
+            function initGlobalScripts() {
+                // Delete button delegation
+                if (!document.body.dataset.deleteListenerAttached) {
+                    document.addEventListener('click', function(event) {
+                        const button = event.target.closest('.delete-btn');
+                        if (!button) return;
 
-            document.querySelectorAll('.delete-btn').forEach(function(button) {
-                button.addEventListener('click', function(event) {
-                    event.preventDefault();
-                    var action = this.getAttribute('data-action');
-                    confirmModalForm.setAttribute('action', action);
-                    confirmModal.show();
-                });
-            });
-        });
-    </script>
+                        event.preventDefault();
+                        const modalElement = document.getElementById('confirmModal');
+                        const confirmModalForm = document.getElementById('confirmModalForm');
+                        
+                        if (modalElement && confirmModalForm && window.bootstrap) {
+                            const action = button.getAttribute('data-action');
+                            confirmModalForm.setAttribute('action', action);
+                            const confirmModal = new bootstrap.Modal(modalElement);
+                            confirmModal.show();
+                        }
+                    });
+                    document.body.dataset.deleteListenerAttached = "true";
+                }
 
-    <?php if($errors->any()): ?>
-    <script>
-        document.addEventListener('turbo:load', function() {
-            var validationModal = new bootstrap.Modal(document.getElementById('validationModal'));
-            validationModal.show();
-        });
+                // Validation modal auto-show
+                const valModalElement = document.getElementById('validationModal');
+                if (valModalElement && window.bootstrap) {
+                    const validationModal = new bootstrap.Modal(valModalElement);
+                    validationModal.show();
+                }
+            }
+
+            document.addEventListener('turbo:load', initGlobalScripts);
+            if (document.readyState !== 'loading') {
+                initGlobalScripts();
+            } else {
+                document.addEventListener('DOMContentLoaded', initGlobalScripts);
+            }
+        })();
     </script>
-    <?php endif; ?>
 
     <?php echo $__env->yieldPushContent('scripts'); ?>
 </body>

@@ -1,5 +1,3 @@
-
-
 <?php ($pageTitle = 'Journal'); ?>
 
 <?php $__env->startSection('content'); ?>

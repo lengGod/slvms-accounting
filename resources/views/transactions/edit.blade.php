@@ -66,42 +66,25 @@
                             @enderror
                         </div>
                         <div class="col-md-6">
-                            <label for="amount" class="form-label">Jumlah <span class="text-muted">(Otomatis
-                                    dihitung)</span></label>
+                            <label for="amount" class="form-label">Jumlah</label>
                             <div class="input-group">
                                 <span class="input-group-text">Rp</span>
                                 <input type="number" class="form-control" id="amount" name="amount"
-                                    value="{{ number_format($transaction->amount, 2, '.', '') }}" min="0"
-                                    step="0.01" readonly>
+                                    value="{{ round($transaction->amount) }}" min="0"
+                                    step="1">
                             </div>
-                            <small class="text-muted">Jumlah otomatis dihitung dari Bagi Hasil + Bagi Pokok</small>
+                            <small class="text-muted">Jika diisi, bagi hasil dan pokok akan dihitung otomatis</small>
                             @error('amount')
                                 <div class="text-danger small">{{ $message }}</div>
                             @enderror
                         </div>
 
-                        <!-- Info untuk transaksi piutang -->
-                        <div id="piutangInfo" class="col-12"
-                            style="{{ $transaction->type == 'piutang' ? '' : 'display: none;' }}">
+                        <div class="col-12">
                             <div class="alert alert-info d-flex align-items-center" role="alert">
                                 <i class="bi bi-info-circle-fill me-2"></i>
                                 <div>
-                                    <strong>Informasi Piutang:</strong>
-                                    <p class="mb-0 mt-1">Isi Bagi Hasil dan/atau Bagi Pokok. Jumlah transaksi akan otomatis
-                                        dihitung dari penjumlahan keduanya.</p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Info untuk transaksi pembayaran -->
-                        <div id="pembayaranInfo" class="col-12"
-                            style="{{ $transaction->type == 'pembayaran' ? '' : 'display: none;' }}">
-                            <div class="alert alert-info d-flex align-items-center" role="alert">
-                                <i class="bi bi-info-circle-fill me-2"></i>
-                                <div>
-                                    <strong>Informasi Pembayaran:</strong>
-                                    <p class="mb-0 mt-1">Isi Bagi Hasil dan/atau Bagi Pokok. Jumlah transaksi akan otomatis
-                                        dihitung dari penjumlahan keduanya.</p>
+                                    <strong>Informasi Alokasi:</strong>
+                                    <p class="mb-0 mt-1">Anda bisa mengisi <strong>Jumlah</strong> secara langsung untuk pembagian otomatis (90% Pokok, 10% Hasil), atau mengisi <strong>Bagi Hasil</strong> dan <strong>Bagi Pokok</strong> secara manual.</p>
                                 </div>
                             </div>
                         </div>
@@ -111,8 +94,8 @@
                             <div class="input-group">
                                 <span class="input-group-text">Rp</span>
                                 <input type="number" class="form-control" id="bagi_hasil" name="bagi_hasil"
-                                    value="{{ number_format($transaction->bagi_hasil ?? 0, 2, '.', '') }}" min="0"
-                                    step="0.01">
+                                    value="{{ round($transaction->bagi_hasil ?? 0) }}" min="0"
+                                    step="1">
                             </div>
                             @error('bagi_hasil')
                                 <div class="text-danger small">{{ $message }}</div>
@@ -123,8 +106,8 @@
                             <div class="input-group">
                                 <span class="input-group-text">Rp</span>
                                 <input type="number" class="form-control" id="bagi_pokok" name="bagi_pokok"
-                                    value="{{ number_format($transaction->bagi_pokok ?? 0, 2, '.', '') }}" min="0"
-                                    step="0.01">
+                                    value="{{ round($transaction->bagi_pokok ?? 0) }}" min="0"
+                                    step="1">
                             </div>
                             @error('bagi_pokok')
                                 <div class="text-danger small">{{ $message }}</div>
@@ -188,137 +171,159 @@
 
     @push('scripts')
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const debtorSelect = document.getElementById('debtor_id');
-                const typeSelect = document.getElementById('type');
-                const amountInput = document.getElementById('amount');
-                const bagiHasilInput = document.getElementById('bagi_hasil');
-                const bagiPokokInput = document.getElementById('bagi_pokok');
-                const debtorInfo = document.getElementById('debtorInfo');
-                const currentBalanceSpan = document.getElementById('currentBalance');
-                const totalTitipanSpan = document.getElementById('totalTitipan');
-                const paymentInfo = document.getElementById('paymentInfo');
-                const kelebihanBayarSpan = document.getElementById('kelebihanBayar');
-                const piutangInfo = document.getElementById('piutangInfo');
-                const pembayaranInfo = document.getElementById('pembayaranInfo');
-                const titipanInfo = document.getElementById('titipanInfo');
-                const availableTitipanSpan = document.getElementById('availableTitipan');
-                const submitBtn = document.getElementById('submitBtn');
-                const form = document.getElementById('transactionForm');
+            (function() {
+                function initEditTransactionLogic() {
+                    const debtorSelect = document.getElementById('debtor_id');
+                    const typeSelect = document.getElementById('type');
+                    const amountInput = document.getElementById('amount');
+                    const bagiHasilInput = document.getElementById('bagi_hasil');
+                    const bagiPokokInput = document.getElementById('bagi_pokok');
+                    const debtorInfo = document.getElementById('debtorInfo');
+                    const currentBalanceSpan = document.getElementById('currentBalance');
+                    const totalTitipanSpan = document.getElementById('totalTitipan');
+                    const paymentInfo = document.getElementById('paymentInfo');
+                    const kelebihanBayarSpan = document.getElementById('kelebihanBayar');
+                    const titipanInfo = document.getElementById('titipanInfo');
+                    const availableTitipanSpan = document.getElementById('availableTitipan');
+                    const form = document.getElementById('transactionForm');
 
-                // Format currency
-                function formatCurrency(amount) {
-                    return new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR',
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0
-                    }).format(amount);
-                }
+                    if (!form) return;
 
-                // Calculate amount from allocation
-                function calculateAmount() {
-                    const bagiHasil = parseFloat(bagiHasilInput.value) || 0;
-                    const bagiPokok = parseFloat(bagiPokokInput.value) || 0;
-                    const total = bagiHasil + bagiPokok;
-
-                    amountInput.value = total.toFixed(2);
-                    updateInfo();
-                }
-
-                // Initialize debtor info
-                function initDebtorInfo() {
-                    const selectedOption = debtorSelect.options[debtorSelect.selectedIndex];
-                    if (selectedOption.value) {
-                        const balance = parseFloat(selectedOption.dataset.balance);
-                        const titipan = parseFloat(selectedOption.dataset.titipan);
-
-                        currentBalanceSpan.textContent = formatCurrency(balance);
-                        currentBalanceSpan.className = balance < 0 ? 'fw-medium text-danger' : 'fw-medium text-success';
-
-                        totalTitipanSpan.textContent = formatCurrency(titipan);
+                    // Format currency
+                    function formatCurrency(amount) {
+                        return new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                        }).format(amount);
                     }
-                    updateInfo();
-                }
 
-                // Update info based on transaction type
-                function updateInfo() {
-                    // Show/hide info based on transaction type
-                    if (typeSelect.value === 'piutang') {
-                        piutangInfo.style.display = 'block';
-                        pembayaranInfo.style.display = 'none';
+                    // Calculate amount from allocation
+                    function calculateAmount() {
+                        const bagiHasil = parseFloat(bagiHasilInput.value) || 0;
+                        const bagiPokok = parseFloat(bagiPokokInput.value) || 0;
+                        const total = Math.round(bagiHasil + bagiPokok);
 
-                        // Check if debtor has titipan
+                        amountInput.value = total;
+                        updateInfo();
+                    }
+
+                    // Calculate allocation from total amount
+                    function calculateAllocation() {
+                        const total = parseFloat(amountInput.value) || 0;
+                        if (total > 0) {
+                            // Default logic: 10% bagi hasil, 90% bagi pokok
+                            const bagiHasil = Math.round(total * 0.1);
+                            const bagiPokok = total - bagiHasil;
+
+                            bagiHasilInput.value = bagiHasil;
+                            bagiPokokInput.value = bagiPokok;
+                        } else {
+                            bagiHasilInput.value = '';
+                            bagiPokokInput.value = '';
+                        }
+                        updateInfo();
+                    }
+
+                    // Initialize debtor info
+                    function initDebtorInfo() {
                         const selectedOption = debtorSelect.options[debtorSelect.selectedIndex];
-                        if (selectedOption.value) {
+                        if (selectedOption && selectedOption.value) {
+                            const balance = parseFloat(selectedOption.dataset.balance);
                             const titipan = parseFloat(selectedOption.dataset.titipan);
-                            const amount = parseFloat(amountInput.value) || 0;
 
-                            if (titipan > 0 && amount > 0) {
-                                availableTitipanSpan.textContent = formatCurrency(titipan);
-                                titipanInfo.style.display = 'block';
+                            currentBalanceSpan.textContent = formatCurrency(balance);
+                            currentBalanceSpan.className = balance < 0 ? 'fw-medium text-danger' :
+                                'fw-medium text-success';
+
+                            totalTitipanSpan.textContent = formatCurrency(titipan);
+                        }
+                        updateInfo();
+                    }
+
+                    // Update info based on transaction type
+                    function updateInfo() {
+                        if (typeSelect.value === 'piutang') {
+                            const selectedOption = debtorSelect.options[debtorSelect.selectedIndex];
+                            if (selectedOption && selectedOption.value) {
+                                const titipan = parseFloat(selectedOption.dataset.titipan);
+                                const amount = parseFloat(amountInput.value) || 0;
+
+                                if (titipan > 0 && amount > 0) {
+                                    availableTitipanSpan.textContent = formatCurrency(titipan);
+                                    titipanInfo.style.display = 'block';
+                                } else {
+                                    titipanInfo.style.display = 'none';
+                                }
                             } else {
                                 titipanInfo.style.display = 'none';
                             }
-                        } else {
+                            paymentInfo.style.display = 'none';
+                        } else if (typeSelect.value === 'pembayaran') {
                             titipanInfo.style.display = 'none';
-                        }
+                            if (debtorSelect.value) {
+                                const selectedOption = debtorSelect.options[debtorSelect.selectedIndex];
+                                const balance = parseFloat(selectedOption.dataset.balance);
+                                const amount = parseFloat(amountInput.value) || 0;
 
-                        paymentInfo.style.display = 'none';
-                    } else if (typeSelect.value === 'pembayaran') {
-                        piutangInfo.style.display = 'none';
-                        pembayaranInfo.style.display = 'block';
-                        titipanInfo.style.display = 'none';
-
-                        // Check for overpayment
-                        if (debtorSelect.value) {
-                            const selectedOption = debtorSelect.options[debtorSelect.selectedIndex];
-                            const balance = parseFloat(selectedOption.dataset.balance);
-                            const amount = parseFloat(amountInput.value) || 0;
-
-                            if (balance < 0 && amount > Math.abs(balance)) {
-                                const kelebihan = amount - Math.abs(balance);
-                                kelebihanBayarSpan.textContent = formatCurrency(kelebihan);
-                                paymentInfo.style.display = 'block';
+                                if (balance < 0 && amount > Math.abs(balance)) {
+                                    const kelebihan = amount - Math.abs(balance);
+                                    kelebihanBayarSpan.textContent = formatCurrency(kelebihan);
+                                    paymentInfo.style.display = 'block';
+                                } else {
+                                    paymentInfo.style.display = 'none';
+                                }
                             } else {
                                 paymentInfo.style.display = 'none';
                             }
                         } else {
+                            titipanInfo.style.display = 'none';
                             paymentInfo.style.display = 'none';
                         }
-                    } else {
-                        piutangInfo.style.display = 'none';
-                        pembayaranInfo.style.display = 'none';
-                        titipanInfo.style.display = 'none';
-                        paymentInfo.style.display = 'none';
                     }
+
+                    // Add event listeners
+                    amountInput.addEventListener('input', calculateAllocation);
+                    bagiHasilInput.addEventListener('input', calculateAmount);
+                    bagiPokokInput.addEventListener('input', calculateAmount);
+
+                    // Initialize Tom Select
+                    const debtorSelectElement = document.getElementById('debtor_id');
+                    const ts = new TomSelect(debtorSelectElement, {
+                        create: false,
+                        sortField: { field: "text", direction: "asc" },
+                        placeholder: "Cari atau pilih debitur..."
+                    });
+
+                    // Update debtor info
+                    debtorSelectElement.addEventListener('change', function() {
+                        initDebtorInfo();
+                    });
+
+                    typeSelect.addEventListener('change', updateInfo);
+
+                    // Form submission validation
+                    form.addEventListener('submit', function(e) {
+                        const amount = parseFloat(amountInput.value) || 0;
+                        if (amount <= 0) {
+                            e.preventDefault();
+                            alert('Jumlah transaksi harus lebih dari 0.');
+                        }
+                    });
+
+                    // Initialize on load
+                    initDebtorInfo();
                 }
 
-                // Add event listeners
-                debtorSelect.addEventListener('change', function() {
-                    initDebtorInfo();
-                });
-
-                typeSelect.addEventListener('change', updateInfo);
-
-                bagiHasilInput.addEventListener('input', calculateAmount);
-                bagiPokokInput.addEventListener('input', calculateAmount);
-
-                // Form submission validation
-                form.addEventListener('submit', function(e) {
-                    const amount = parseFloat(amountInput.value) || 0;
-
-                    if (amount <= 0) {
-                        e.preventDefault();
-                        alert(
-                            'Jumlah transaksi harus lebih dari 0. Silakan isi Bagi Hasil dan/atau Bagi Pokok.'
-                            );
-                    }
-                });
-
-                // Initialize on load
-                initDebtorInfo();
-            });
+                document.addEventListener('DOMContentLoaded', initEditTransactionLogic);
+                document.addEventListener('turbo:load', initEditTransactionLogic);
+                
+                // Fallback in case events already fired
+                if (document.readyState !== 'loading') {
+                    initEditTransactionLogic();
+                }
+            })();
         </script>
     @endpush
 @endsection

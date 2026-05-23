@@ -114,41 +114,34 @@ class TransactionController extends Controller
             $piutangPokok = abs($validated['bagi_pokok'] ?? 0);
             $piutangHasil = abs($validated['bagi_hasil'] ?? 0);
 
-            // If no allocation specified, assume all is pokok
             if ($piutangPokok == 0 && $piutangHasil == 0) {
                 $piutangPokok = $piutangAmount;
             }
 
-            // Calculate how much titipan will be used
             $availableTitipan = $debtor->total_titipan;
             $usedTitipan = min($availableTitipan, $piutangAmount);
 
-            // STEP 1: Create FULL piutang transaction (not net amount)
-            $piutangDescription = $validated['description'] ?? 'Piutang';
-            if ($usedTitipan > 0) {
-                $piutangDescription .= ' (Dibayar menggunakan titipan: Rp ' . number_format($usedTitipan, 0, ',', '.') . ')';
-            }
-
+            // 1. Create Piutang Transaction (Full amount)
             $piutangTx = Transaction::create([
                 'debtor_id' => $debtor->id,
                 'type' => 'piutang',
-                'amount' => -1 * $piutangAmount, // FULL amount, not net!
+                'amount' => -1 * $piutangAmount,
                 'bagi_hasil' => -1 * $piutangHasil,
                 'bagi_pokok' => -1 * $piutangPokok,
                 'transaction_date' => $validated['transaction_date'],
-                'description' => $piutangDescription,
+                'description' => $validated['description'] ?? 'Piutang',
                 'user_id' => auth()->id(),
             ]);
 
-            // STEP 2: If titipan is used, create payment transaction and reduce titipan
+            // 2. Create Payment Transaction (if titipan is used)
             if ($usedTitipan > 0) {
+                // Calculate proportional allocation based on original piutang
+                // Piutang amount is negative in DB, but piutangAmount is positive
+                $ratio = $usedTitipan / $piutangAmount;
+                $paymentPokok = $piutangPokok * $ratio;
+                $paymentHasil = $piutangHasil * $ratio;
 
-
-                // Calculate proportional allocation for payment
-                $paymentPokok = ($piutangPokok / $piutangAmount) * $usedTitipan;
-                $paymentHasil = ($piutangHasil / $piutangAmount) * $usedTitipan;
-
-                // Create payment transaction from titipan
+                // Create payment transaction from titipan (POSITIVE VALUES)
                 Transaction::create([
                     'debtor_id' => $debtor->id,
                     'type' => 'pembayaran',
@@ -156,31 +149,25 @@ class TransactionController extends Controller
                     'bagi_hasil' => $paymentHasil,
                     'bagi_pokok' => $paymentPokok,
                     'transaction_date' => $validated['transaction_date'],
-                    'description' => 'Pembayaran menggunakan titipan untuk piutang #' . $piutangTx->id,
+                    'description' => 'Pembayaran otomatis titipan untuk piutang #' . $piutangTx->id,
                     'user_id' => auth()->id(),
                 ]);
 
-                // Reduce titipan
-                $debtor->useTitipanForNewPiutang($piutangAmount, $piutangTx->id, $piutangPokok, $piutangHasil);
+                // 3. Deduct Titipan explicitly (NEGATIVE VALUES to reflect deduction)
+                $debtor->recordTitipanAdjustment(
+                    -$usedTitipan,
+                    'Penggunaan untuk piutang #' . $piutangTx->id,
+                    $piutangTx->id,
+                    -$paymentPokok,
+                    -$paymentHasil
+                );
             }
 
             DB::commit();
-
-            $message = 'Piutang berhasil ditambahkan. ';
-            if ($usedTitipan > 0) {
-                $message .= 'Menggunakan titipan sebesar Rp ' . number_format($usedTitipan, 0, ',', '.') . '. ';
-                $remainingPiutang = $piutangAmount - $usedTitipan;
-                if ($remainingPiutang > 0) {
-                    $message .= 'Sisa piutang yang belum dibayar: Rp ' . number_format($remainingPiutang, 0, ',', '.');
-                } else {
-                    $message .= 'Piutang sudah lunas dengan titipan.';
-                }
-            }
-
-            return redirect()->route('transactions.index')->with('success', $message);
+            return redirect()->route('transactions.index')->with('success', 'Piutang berhasil dicatat' . ($usedTitipan > 0 ? ' dan titipan telah digunakan.' : '.'));
         } catch (\Throwable $e) {
             DB::rollBack();
-            return redirect()->route('transactions.create')->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+            return redirect()->route('transactions.create')->with('error', 'Gagal: ' . $e->getMessage());
         }
     }
 
@@ -251,7 +238,7 @@ class TransactionController extends Controller
                         'amount' => 0,
                         'bagi_pokok' => 0,
                         'bagi_hasil' => 0,
-                        'description' => ($validated['description'] ?? '') . ' (Pembayaran menjadi titipan)',
+                        'description' => 'Pembayaran menjadi titipan',
                     ]));
 
                     $keterangan = 'Pembayaran menjadi titipan (Transaksi #' . $pembayaran->id . ')';
@@ -394,7 +381,7 @@ class TransactionController extends Controller
                     'amount' => 0,
                     'bagi_pokok' => 0,
                     'bagi_hasil' => 0,
-                    'description' => ($validated['description'] ?? '') . ' (Pembayaran menjadi titipan)',
+                    'description' => 'Pembayaran menjadi titipan',
                 ]));
 
                 $debtor = $debtor->fresh();

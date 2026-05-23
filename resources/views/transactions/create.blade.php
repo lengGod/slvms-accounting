@@ -61,14 +61,13 @@
                             @enderror
                         </div>
                         <div class="col-md-6">
-                            <label for="amount" class="form-label">Jumlah <span class="text-muted">(Otomatis
-                                    dihitung)</span></label>
+                            <label for="amount" class="form-label">Jumlah</label>
                             <div class="input-group">
                                 <span class="input-group-text">Rp</span>
                                 <input type="number" class="form-control" id="amount" name="amount" placeholder="0"
-                                    min="0" step="0.01" readonly>
+                                    min="0" step="1">
                             </div>
-                            <small class="text-muted">Jumlah akan otomatis dihitung dari Bagi Hasil + Bagi Pokok</small>
+                            <small class="text-muted">Jika diisi, bagi hasil dan pokok akan dihitung otomatis</small>
                             @error('amount')
                                 <div class="text-danger small">{{ $message }}</div>
                             @enderror
@@ -78,8 +77,7 @@
                                 <i class="bi bi-info-circle-fill me-2"></i>
                                 <div>
                                     <strong>Informasi Alokasi:</strong>
-                                    <p class="mb-0 mt-1">Isi Bagi Hasil dan/atau Bagi Pokok. Jumlah transaksi akan otomatis
-                                        dihitung dari penjumlahan keduanya.</p>
+                                    <p class="mb-0 mt-1">Anda bisa mengisi <strong>Jumlah</strong> secara langsung untuk pembagian otomatis (90% Pokok, 10% Hasil), atau mengisi <strong>Bagi Hasil</strong> dan <strong>Bagi Pokok</strong> secara manual.</p>
                                 </div>
                             </div>
                         </div>
@@ -88,7 +86,7 @@
                             <div class="input-group">
                                 <span class="input-group-text">Rp</span>
                                 <input type="number" class="form-control" id="bagi_hasil" name="bagi_hasil" placeholder="0"
-                                    min="0" step="0.01">
+                                    min="0" step="1">
                             </div>
                             @error('bagi_hasil')
                                 <div class="text-danger small">{{ $message }}</div>
@@ -99,7 +97,7 @@
                             <div class="input-group">
                                 <span class="input-group-text">Rp</span>
                                 <input type="number" class="form-control" id="bagi_pokok" name="bagi_pokok" placeholder="0"
-                                    min="0" step="0.01">
+                                    min="0" step="1">
                             </div>
                             @error('bagi_pokok')
                                 <div class="text-danger small">{{ $message }}</div>
@@ -160,162 +158,176 @@
 
     @push('scripts')
         <script>
-            document.addEventListener('DOMContentLoaded', function() {
-                const debtorSelect = document.getElementById('debtor_id');
-                const typeSelect = document.getElementById('type');
-                const amountInput = document.getElementById('amount');
-                const bagiHasilInput = document.getElementById('bagi_hasil');
-                const bagiPokokInput = document.getElementById('bagi_pokok');
-                const debtorInfo = document.getElementById('debtorInfo');
-                const currentBalanceSpan = document.getElementById('currentBalance');
-                const totalTitipanSpan = document.getElementById('totalTitipan');
-                const titipanSection = document.getElementById('titipanSection');
-                const availableTitipanSpan = document.getElementById('availableTitipan');
-                const useTitipanBtn = document.getElementById('useTitipanBtn');
-                const paymentInfo = document.getElementById('paymentInfo');
-                const kelebihanBayarSpan = document.getElementById('kelebihanBayar');
-                const submitBtn = document.getElementById('submitBtn');
-                const form = document.getElementById('transactionForm');
+            (function() {
+                function initTransactionLogic() {
+                    const debtorSelect = document.getElementById('debtor_id');
+                    const typeSelect = document.getElementById('type');
+                    const amountInput = document.getElementById('amount');
+                    const bagiHasilInput = document.getElementById('bagi_hasil');
+                    const bagiPokokInput = document.getElementById('bagi_pokok');
+                    const debtorInfo = document.getElementById('debtorInfo');
+                    const currentBalanceSpan = document.getElementById('currentBalance');
+                    const totalTitipanSpan = document.getElementById('totalTitipan');
+                    const titipanSection = document.getElementById('titipanSection');
+                    const availableTitipanSpan = document.getElementById('availableTitipan');
+                    const useTitipanBtn = document.getElementById('useTitipanBtn');
+                    const paymentInfo = document.getElementById('paymentInfo');
+                    const kelebihanBayarSpan = document.getElementById('kelebihanBayar');
+                    const form = document.getElementById('transactionForm');
 
-                // Format currency
-                function formatCurrency(amount) {
-                    return new Intl.NumberFormat('id-ID', {
-                        style: 'currency',
-                        currency: 'IDR',
-                        minimumFractionDigits: 0,
-                        maximumFractionDigits: 0
-                    }).format(amount);
-                }
+                    if (!form) return;
 
-                // Calculate amount from allocation
-                function calculateAmount() {
-                    const bagiHasil = parseFloat(bagiHasilInput.value) || 0;
-                    const bagiPokok = parseFloat(bagiPokokInput.value) || 0;
-                    const total = bagiHasil + bagiPokok;
+                    // Format currency
+                    function formatCurrency(amount) {
+                        return new Intl.NumberFormat('id-ID', {
+                            style: 'currency',
+                            currency: 'IDR',
+                            minimumFractionDigits: 0,
+                            maximumFractionDigits: 0
+                        }).format(amount);
+                    }
 
-                    amountInput.value = total.toFixed(2);
-                    updatePaymentInfo();
-                    checkTitipan();
-                }
+                    // Calculate amount from allocation
+                    function calculateAmount() {
+                        const bagiHasil = parseFloat(bagiHasilInput.value) || 0;
+                        const bagiPokok = parseFloat(bagiPokokInput.value) || 0;
+                        const total = Math.round(bagiHasil + bagiPokok);
 
-                // Show debtor info when selected
-                debtorSelect.addEventListener('change', function() {
-                    const selectedOption = this.options[this.selectedIndex];
-                    if (selectedOption.value) {
+                        amountInput.value = total;
+                        updatePaymentInfo();
+                        checkTitipan();
+                    }
+
+                    // Calculate allocation from total amount
+                    function calculateAllocation() {
+                        const total = parseFloat(amountInput.value) || 0;
+                        if (total > 0) {
+                            // Default logic: 10% bagi hasil, 90% bagi pokok
+                            const bagiHasil = Math.round(total * 0.1);
+                            const bagiPokok = total - bagiHasil;
+
+                            bagiHasilInput.value = bagiHasil;
+                            bagiPokokInput.value = bagiPokok;
+                        } else {
+                            bagiHasilInput.value = '';
+                            bagiPokokInput.value = '';
+                        }
+                        updatePaymentInfo();
+                        checkTitipan();
+                    }
+
+                    // Initialize Tom Select
+                    const debtorSelectElement = document.getElementById('debtor_id');
+                    const ts = new TomSelect(debtorSelectElement, {
+                        create: false,
+                        sortField: { field: "text", direction: "asc" },
+                        placeholder: "Cari atau pilih debitur..."
+                    });
+
+                    // Show debtor info when selected (Tom Select uses the 'change' event on the original select)
+                    debtorSelect.addEventListener('change', function() {
+                        const selectedOption = this.options[this.selectedIndex];
+                        if (selectedOption.value) {
+                            const balance = parseFloat(selectedOption.dataset.balance);
+                            const titipan = parseFloat(selectedOption.dataset.titipan);
+
+                            currentBalanceSpan.textContent = formatCurrency(balance);
+                            currentBalanceSpan.className = balance < 0 ? 'fw-medium text-danger' :
+                                'fw-medium text-success';
+
+                            totalTitipanSpan.textContent = formatCurrency(titipan);
+                            debtorInfo.style.display = 'block';
+                        } else {
+                            debtorInfo.style.display = 'none';
+                        }
+                        updatePaymentInfo();
+                        checkTitipan();
+                    });
+
+                    // Update payment info
+                    function updatePaymentInfo() {
+                        if (typeSelect.value !== 'pembayaran' || !debtorSelect.value) {
+                            paymentInfo.style.display = 'none';
+                            return;
+                        }
+
+                        const selectedOption = debtorSelect.options[debtorSelect.selectedIndex];
                         const balance = parseFloat(selectedOption.dataset.balance);
-                        const titipan = parseFloat(selectedOption.dataset.titipan);
-
-                        currentBalanceSpan.textContent = formatCurrency(balance);
-                        currentBalanceSpan.className = balance < 0 ? 'fw-medium text-danger' :
-                            'fw-medium text-success';
-
-                        totalTitipanSpan.textContent = formatCurrency(titipan);
-                        debtorInfo.style.display = 'block';
-                    } else {
-                        debtorInfo.style.display = 'none';
-                    }
-                    updatePaymentInfo();
-                    checkTitipan();
-                });
-
-                // Update payment info
-                function updatePaymentInfo() {
-                    if (typeSelect.value !== 'pembayaran' || !debtorSelect.value) {
-                        paymentInfo.style.display = 'none';
-                        return;
-                    }
-
-                    const selectedOption = debtorSelect.options[debtorSelect.selectedIndex];
-                    const balance = parseFloat(selectedOption.dataset.balance);
-                    const amount = parseFloat(amountInput.value) || 0;
-
-                    if (balance < 0 && amount > Math.abs(balance)) {
-                        const kelebihan = amount - Math.abs(balance);
-                        kelebihanBayarSpan.textContent = formatCurrency(kelebihan);
-                        paymentInfo.style.display = 'block';
-                    } else {
-                        paymentInfo.style.display = 'none';
-                    }
-                }
-
-                // Check for available titipan and show option
-                function checkTitipan() {
-                    const selectedOption = debtorSelect.options[debtorSelect.selectedIndex];
-                    if (selectedOption.value && typeSelect.value === 'piutang') {
-                        const titipan = parseFloat(selectedOption.dataset.titipan);
                         const amount = parseFloat(amountInput.value) || 0;
 
-                        if (titipan > 0 && amount > 0) {
-                            availableTitipanSpan.textContent = formatCurrency(titipan);
-                            titipanSection.style.display = 'block';
+                        if (balance < 0 && amount > Math.abs(balance)) {
+                            const kelebihan = amount - Math.abs(balance);
+                            kelebihanBayarSpan.textContent = formatCurrency(kelebihan);
+                            paymentInfo.style.display = 'block';
+                        } else {
+                            paymentInfo.style.display = 'none';
+                        }
+                    }
+
+                    // Check for available titipan and show option
+                    function checkTitipan() {
+                        const selectedOption = debtorSelect.options[debtorSelect.selectedIndex];
+                        if (selectedOption.value && typeSelect.value === 'piutang') {
+                            const titipan = parseFloat(selectedOption.dataset.titipan);
+                            const amount = parseFloat(amountInput.value) || 0;
+
+                            if (titipan > 0 && amount > 0) {
+                                availableTitipanSpan.textContent = formatCurrency(titipan);
+                                titipanSection.style.display = 'block';
+                            } else {
+                                titipanSection.style.display = 'none';
+                            }
                         } else {
                             titipanSection.style.display = 'none';
                         }
-                    } else {
-                        titipanSection.style.display = 'none';
                     }
+
+                    // Handle use titipan button click
+                    useTitipanBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+
+                        const debtorId = debtorSelect.value;
+                        const amount = parseFloat(amountInput.value) || 0;
+                        const bagiHasil = parseFloat(bagiHasilInput.value) || 0;
+                        const bagiPokok = parseFloat(bagiPokokInput.value) || 0;
+                        const transactionDate = document.getElementById('transaction_date').value;
+                        const description = document.getElementById('description').value;
+
+                        if (debtorId && amount > 0) {
+                            const url = "{{ route('transactions.create-with-titipan-confirmation') }}";
+                            const params = new URLSearchParams({
+                                debtor_id: debtorId,
+                                amount: amount,
+                                bagi_hasil: bagiHasil,
+                                bagi_pokok: bagiPokok,
+                                transaction_date: transactionDate,
+                                description: description
+                            });
+                            window.location.href = url + '?' + params.toString();
+                        } else {
+                            alert('Pilih debitur dan masukkan jumlah piutang terlebih dahulu');
+                        }
+                    });
+
+                    // Add event listeners
+                    amountInput.addEventListener('input', calculateAllocation);
+                    bagiHasilInput.addEventListener('input', calculateAmount);
+                    bagiPokokInput.addEventListener('input', calculateAmount);
+                    typeSelect.addEventListener('change', updatePaymentInfo);
+
+                    // Form validation
+                    form.addEventListener('submit', function(e) {
+                        const amount = parseFloat(amountInput.value) || 0;
+                        if (amount <= 0) {
+                            e.preventDefault();
+                            alert('Jumlah transaksi harus lebih dari 0.');
+                        }
+                    });
                 }
 
-                // Handle use titipan button click
-                useTitipanBtn.addEventListener('click', function(e) {
-                    e.preventDefault(); // Mencegah form submit utama
-
-                    const debtorId = debtorSelect.value;
-                    const amount = parseFloat(amountInput.value) || 0;
-                    const bagiHasil = parseFloat(bagiHasilInput.value) || 0;
-                    const bagiPokok = parseFloat(bagiPokokInput.value) || 0;
-                    const transactionDate = document.getElementById('transaction_date').value;
-                    const description = document.getElementById('description').value;
-
-                    if (debtorId && amount > 0) {
-                        // Debug: Cek nilai-nilai
-                        console.log('debtorId:', debtorId);
-                        console.log('amount:', amount);
-                        console.log('bagiHasil:', bagiHasil);
-                        console.log('bagiPokok:', bagiPokok);
-                        console.log('transactionDate:', transactionDate);
-                        console.log('description:', description);
-
-                        // Coba dengan URL langsung dulu untuk debug
-                        const url = "{{ route('transactions.create-with-titipan-confirmation') }}";
-                        console.log('URL:', url);
-
-                        // Buat parameter query string
-                        const params = new URLSearchParams({
-                            debtor_id: debtorId,
-                            amount: amount,
-                            bagi_hasil: bagiHasil,
-                            bagi_pokok: bagiPokok,
-                            transaction_date: transactionDate,
-                            description: description
-                        });
-
-                        console.log('Params:', params.toString());
-
-                        // Redirect dengan query string
-                        window.location.href = url + '?' + params.toString();
-                    } else {
-                        alert('Pilih debitur dan masukkan jumlah piutang terlebih dahulu');
-                    }
-                });
-
-                // Add event listeners for allocation inputs
-                bagiHasilInput.addEventListener('input', calculateAmount);
-                bagiPokokInput.addEventListener('input', calculateAmount);
-                typeSelect.addEventListener('change', updatePaymentInfo);
-
-                // Form submission validation
-                form.addEventListener('submit', function(e) {
-                    const amount = parseFloat(amountInput.value) || 0;
-
-                    if (amount <= 0) {
-                        e.preventDefault();
-                        alert(
-                            'Jumlah transaksi harus lebih dari 0. Silakan isi Bagi Hasil dan/atau Bagi Pokok.'
-                        );
-                    }
-                });
-            });
+                document.addEventListener('DOMContentLoaded', initTransactionLogic);
+                document.addEventListener('turbo:load', initTransactionLogic);
+            })();
         </script>
     @endpush
 @endsection

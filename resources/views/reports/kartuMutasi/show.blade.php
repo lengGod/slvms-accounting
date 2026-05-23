@@ -138,19 +138,30 @@
                                 $saldoBagiHasil = 0;
                                 $saldoTotal = 0;
                             @endphp
+
                             @if (count($sortedEvents) > 0)
                                 @foreach ($sortedEvents as $transaction)
+                                    {{-- Skip baris yang bukan transaksi utama --}}
+                                    @if ($transaction['source'] !== 'transaction')
+                                        @continue
+                                    @endif
+
+                                    @php
+                                        $bagiPokok = $transaction['pokok'] ?? 0;
+                                        $bagiHasil = $transaction['hasil'] ?? 0;
+                                        $amount = $transaction['total'] ?? 0;
+                                        $type = $transaction['type'] ?? '';
+
+                                        // Hitung saldo hanya dari transaksi utama
+                                        $saldoPokok += $bagiPokok;
+                                        $saldoBagiHasil += $bagiHasil;
+                                        $saldoTotal += $amount;
+                                    @endphp
+
                                     <tr>
                                         <td>{{ $transaction['id'] ?? '-' }}</td>
                                         <td>{{ \Carbon\Carbon::parse($transaction['date'])->format('d M Y') ?? '-' }}</td>
                                         <td>{{ $transaction['description'] ?? '-' }}</td>
-
-                                        @php
-                                            $bagiPokok = $transaction['pokok'] ?? 0;
-                                            $bagiHasil = $transaction['hasil'] ?? 0;
-                                            $amount = $transaction['total'] ?? 0;
-                                            $type = $transaction['type'] ?? '';
-                                        @endphp
 
                                         @if ($type == 'piutang')
                                             <td class="text-danger">{{ number_format(abs($bagiPokok), 0, ',', '.') }}</td>
@@ -170,19 +181,12 @@
                                             </td>
                                         @endif
 
-                                        @php
-                                            // FIX: Don't add payment from titipan to running total, as it's already accounted for.
-                                            if (!str_starts_with($transaction['description'], 'Pembayaran menggunakan titipan')) {
-                                                $saldoPokok += $bagiPokok;
-                                                $saldoBagiHasil += $bagiHasil;
-                                                $saldoTotal += $amount;
-                                            }
-                                        @endphp
-
                                         <td class="{{ $saldoPokok >= 0 ? 'text-success' : 'text-danger' }}">
-                                            {{ number_format($saldoPokok, 0, ',', '.') }}</td>
+                                            {{ number_format($saldoPokok, 0, ',', '.') }}
+                                        </td>
                                         <td class="{{ $saldoBagiHasil >= 0 ? 'text-success' : 'text-danger' }}">
-                                            {{ number_format($saldoBagiHasil, 0, ',', '.') }}</td>
+                                            {{ number_format($saldoBagiHasil, 0, ',', '.') }}
+                                        </td>
                                         <td class="{{ $saldoTotal >= 0 ? 'text-success' : 'text-danger' }}">
                                             <strong>{{ number_format($saldoTotal, 0, ',', '.') }}</strong>
                                         </td>
@@ -193,6 +197,8 @@
                                     <td colspan="12" class="text-center">Tidak ada transaksi pada periode ini.</td>
                                 </tr>
                             @endif
+
+                            {{-- Total --}}
                             <tr class="table-active">
                                 <td colspan="3" class="text-end"><strong>Total</strong></td>
                                 <td class="text-danger">
@@ -205,13 +211,13 @@
                                     <strong>{{ number_format($sortedEvents->where('type', 'piutang')->sum('total') ?? 0, 0, ',', '.') }}</strong>
                                 </td>
                                 <td class="text-success">
-                                    <strong>{{ number_format($sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('pokok') ?? 0, 0, ',', '.') }}</strong>
+                                    <strong>{{ number_format($sortedEvents->where('type', 'pembayaran')->sum('pokok') ?? 0, 0, ',', '.') }}</strong>
                                 </td>
                                 <td class="text-success">
-                                    <strong>{{ number_format($sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('hasil') ?? 0, 0, ',', '.') }}</strong>
+                                    <strong>{{ number_format($sortedEvents->where('type', 'pembayaran')->sum('hasil') ?? 0, 0, ',', '.') }}</strong>
                                 </td>
                                 <td class="text-success">
-                                    <strong>{{ number_format($sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('total') ?? 0, 0, ',', '.') }}</strong>
+                                    <strong>{{ number_format($sortedEvents->where('type', 'pembayaran')->sum('total') ?? 0, 0, ',', '.') }}</strong>
                                 </td>
                                 <td class="{{ $saldoPokok >= 0 ? 'text-success' : 'text-danger' }}">
                                     <strong>{{ number_format($saldoPokok, 0, ',', '.') }}</strong>
@@ -224,6 +230,7 @@
                                 </td>
                             </tr>
                         </tbody>
+
                     </table>
                 </div>
             </div>
