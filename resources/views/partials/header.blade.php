@@ -119,29 +119,32 @@
 </style>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('turbo:load', function() {
         const profileDropdown = document.getElementById('profileDropdown');
         const profileMenu = document.getElementById('profileMenu');
         const dropdownIcon = profileDropdown.querySelector('.dropdown-icon');
 
+        // Remove old listeners if they exist (to prevent duplicates)
+        profileDropdown.replaceWith(profileDropdown.cloneNode(true));
+        
+        // Re-get elements after clone
+        const newProfileDropdown = document.getElementById('profileDropdown');
+        const newProfileMenu = document.getElementById('profileMenu');
+        const newDropdownIcon = newProfileDropdown.querySelector('.dropdown-icon');
+
         // Toggle profile dropdown
-        profileDropdown.addEventListener('click', function(e) {
+        newProfileDropdown.addEventListener('click', function(e) {
             e.stopPropagation();
-            profileMenu.classList.toggle('show');
-            dropdownIcon.classList.toggle('rotate');
+            newProfileMenu.classList.toggle('show');
+            newDropdownIcon.classList.toggle('rotate');
         });
 
         // Close dropdown when clicking outside
         document.addEventListener('click', function(e) {
-            if (!profileDropdown.contains(e.target) && !profileMenu.contains(e.target)) {
-                profileMenu.classList.remove('show');
-                dropdownIcon.classList.remove('rotate');
+            if (!newProfileDropdown.contains(e.target) && !newProfileMenu.contains(e.target)) {
+                newProfileMenu.classList.remove('show');
+                newDropdownIcon.classList.remove('rotate');
             }
-        });
-
-        // Prevent dropdown from closing when clicking inside
-        profileMenu.addEventListener('click', function(e) {
-            e.stopPropagation();
         });
     });
 </script>
