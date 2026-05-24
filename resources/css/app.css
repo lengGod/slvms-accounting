@@ -5,6 +5,12 @@ body {
     font-family: 'Instrument Sans', ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
 }
 
+@media print {
+    .no-print {
+        display: none !important;
+    }
+}
+
 aside {
     width: 250px;
     position: fixed;

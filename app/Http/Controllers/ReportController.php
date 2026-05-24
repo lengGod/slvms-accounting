@@ -17,6 +17,43 @@ use Maatwebsite\Excel\Facades\Excel;
 class ReportController extends Controller
 {
     /**
+     * Display print view for kartu mutasi report
+     */
+    public function printKartuMutasi(Request $request)
+    {
+        $search = $request->search;
+        $startDate = $request->start_date ?: Carbon::now()->startOfMonth()->format('Y-m-d');
+        $endDate = $request->end_date ?: Carbon::now()->endOfMonth()->format('Y-m-d');
+
+        $debtors = Debtor::when($search, function ($query) use ($search) {
+            return $query->where('name', 'like', '%' . $search . '%')
+                ->orWhere('address', 'like', '%' . $search . '%')
+                ->orWhere('phone', 'like', '%' . $search . '%');
+        })
+            ->orderBy('name')
+            ->get(); // Get ALL for printing
+
+        // Hitung status tiap debitur
+        $debtors->transform(function ($debtor) {
+            $saldoPokok = Transaction::where('debtor_id', $debtor->id)->sum('bagi_pokok');
+            $saldoHasil = Transaction::where('debtor_id', $debtor->id)->sum('bagi_hasil');
+            $debtor->current_balance = $saldoPokok + $saldoHasil;
+
+            if ($debtor->current_balance < 0) {
+                $debtor->debtor_status = 'belum_lunas';
+            } elseif ($debtor->current_balance > 0) {
+                $debtor->debtor_status = 'Titipan';
+            } else {
+                $debtor->debtor_status = 'lunas';
+            }
+
+            return $debtor;
+        });
+
+        return view('reports.kartuMutasi.print', compact('debtors', 'search', 'startDate', 'endDate'));
+    }
+
+    /**
      * Display kartu mutasi report (daftar debitur)
      */
     public function kartuMutasi(Request $request)
@@ -25,7 +62,6 @@ class ReportController extends Controller
         $startDate = $request->start_date ?: Carbon::now()->startOfMonth()->format('Y-m-d');
         $endDate = $request->end_date ?: Carbon::now()->endOfMonth()->format('Y-m-d');
 
-        // Ambil daftar debitur dengan filter pencarian
         $debtors = Debtor::when($search, function ($query) use ($search) {
             return $query->where('name', 'like', '%' . $search . '%')
                 ->orWhere('address', 'like', '%' . $search . '%')
@@ -33,6 +69,23 @@ class ReportController extends Controller
         })
             ->orderBy('name')
             ->paginate(10);
+
+        // Hitung status tiap debitur
+        $debtors->getCollection()->transform(function ($debtor) {
+            $saldoPokok = Transaction::where('debtor_id', $debtor->id)->sum('bagi_pokok');
+            $saldoHasil = Transaction::where('debtor_id', $debtor->id)->sum('bagi_hasil');
+            $debtor->current_balance = $saldoPokok + $saldoHasil;
+
+            if ($debtor->current_balance < 0) {
+                $debtor->debtor_status = 'belum_lunas';
+            } elseif ($debtor->current_balance > 0) {
+                $debtor->debtor_status = 'Titipan';
+            } else {
+                $debtor->debtor_status = 'lunas';
+            }
+
+            return $debtor;
+        });
 
         return view('reports.kartuMutasi.index', compact('debtors', 'search', 'startDate', 'endDate'));
     }
@@ -217,19 +270,14 @@ class ReportController extends Controller
                 $debtor->debtor_status = 'lunas';
             }
             return $debtor;
-        })->filter(function ($debtor) {
-            return $debtor->debtor_status === 'belum_lunas';
-        });
-
-        // Group by code after filtering
-        $debtorsByCode = $filteredDebtors->groupBy('code');
+        }); // Removed filter for debugging
 
         // Calculate totals based on the selected month
         $totalPiutang = Transaction::where('type', 'piutang')->where('transaction_date', '<=', $endDate)->sum('amount');
         $totalPembayaran = Transaction::where('type', 'pembayaran')->where('transaction_date', '<=', $endDate)->sum('amount');
 
         return view('reports.debit_piutang', [
-            'debtorsByCode' => $debtorsByCode,
+            'debtors' => $filteredDebtors,
             'totalPiutang' => $totalPiutang,
             'totalPembayaran' => $totalPembayaran,
         ]);

@@ -11,9 +11,9 @@
                 <p class="text-muted">Pilih debitur untuk melihat detail kartu mutasi.</p>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                <button class="btn btn-primary" onclick="printContent()">
+                <a href="{{ route('reports.kartu-mutasi.print', request()->all()) }}" target="_blank" class="btn btn-primary">
                     <i class="bi bi-printer me-1"></i> Cetak
-                </button>
+                </a>
             </div>
         </div>
 
@@ -37,7 +37,7 @@
                     </div>
                 </form>
 
-                <div class="table-responsive" id="print-content">
+                <div class="table-responsive">
                     <table class="table table-hover align-middle">
                         <thead>
                             <tr>
@@ -61,7 +61,7 @@
                                     </td>
                                     <td>
                                         <span
-                                            class="badge bg-{{ $debtor->debtor_status == 'lunas' ? 'success' : ($debtor->debtor_status == 'Titipan' ? 'info' : 'danger') }}">
+                                            class="badge bg-{{ $debtor->debtor_status == 'Lunas' ? 'success' : ($debtor->debtor_status == 'Titipan' ? 'info' : 'danger') }}">
                                             {{ $debtor->keterangan_piutang }}
                                         </span>
                                     </td>

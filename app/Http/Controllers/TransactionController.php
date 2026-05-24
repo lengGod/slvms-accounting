@@ -45,10 +45,11 @@ class TransactionController extends Controller
         return view('transactions.index', compact('transactions'));
     }
 
-    public function create()
+    public function create(Request $request)
     {
         $debtors = Debtor::all();
-        return view('transactions.create', compact('debtors'));
+        $selectedDebtorId = $request->query('debtor_id');
+        return view('transactions.create', compact('debtors', 'selectedDebtorId'));
     }
 
     public function createWithTitipanConfirmation(Request $request)

@@ -1,114 +1,69 @@
 <style>
-    table {
-        width: 100%;
-        border-collapse: collapse;
-    }
-    th, td {
-        border: 1px solid #dddddd;
-        text-align: left;
-        padding: 8px;
-    }
-    thead th {
-        background-color: #f2f2f2;
-        font-weight: bold;
-        text-align: center;
-    }
-    h1, h2 {
-        text-align: center;
-    }
-    .text-end {
-        text-align: right;
-    }
+    .header { font-weight: bold; font-size: 14pt; text-align: center; }
+    .table-header { background-color: #d9e1f2; font-weight: bold; text-align: center; border: 1px solid #000; }
+    .text-end { text-align: right; }
+    .border { border: 1px solid #000; }
 </style>
-
-<div>
-    <h1>SLV Accounting</h1>
-    <h2>Laporan Kartu Mutasi: {{ $debtor->name }}</h2>
-</div>
 
 <table>
     <thead>
         <tr>
-            <th rowspan="2">ID Transaksi</th>
-            <th rowspan="2">Tanggal</th>
-            <th rowspan="2">Keterangan</th>
-            <th colspan="2">Piutang</th>
-            <th rowspan="2">Jumlah Piutang</th>
-            <th colspan="2">Pembayaran</th>
-            <th rowspan="2">Jumlah Pembayaran</th>
-            <th colspan="2">Sisa Saldo</th>
-            <th rowspan="2">Total</th>
+            <th colspan="12" class="header">LAPORAN KARTU MUTASI: {{ $debtor->name }}</th>
         </tr>
         <tr>
-            <th>Pokok</th>
-            <th>Bagi Hasil</th>
-            <th>Pokok</th>
-            <th>Bagi Hasil</th>
-            <th>Pokok</th>
-            <th>Bagi Hasil</th>
+            <th colspan="12" class="header">Periode: {{ \Carbon\Carbon::now()->format('d F Y') }}</th>
+        </tr>
+        <tr></tr>
+        <tr>
+            <th rowspan="2" class="table-header">ID</th>
+            <th rowspan="2" class="table-header">Tanggal</th>
+            <th rowspan="2" class="table-header">Keterangan</th>
+            <th colspan="2" class="table-header">Piutang</th>
+            <th rowspan="2" class="table-header">Total Piutang</th>
+            <th colspan="2" class="table-header">Pembayaran</th>
+            <th rowspan="2" class="table-header">Total Bayar</th>
+            <th colspan="2" class="table-header">Sisa Saldo</th>
+        </tr>
+        <tr>
+            <th class="table-header">Pokok</th>
+            <th class="table-header">Bagi Hasil</th>
+            <th class="table-header">Pokok</th>
+            <th class="table-header">Bagi Hasil</th>
+            <th class="table-header">Pokok</th>
+            <th class="table-header">Bagi Hasil</th>
         </tr>
     </thead>
     <tbody>
         @php
             $saldoPokok = 0;
             $saldoBagiHasil = 0;
-            $saldoTotal = 0;
         @endphp
-        @if (count($sortedEvents) > 0)
-            @foreach ($sortedEvents as $transaction)
-                @php
-                    $bagiPokok = $transaction['pokok'] ?? 0;
-                    $bagiHasil = $transaction['hasil'] ?? 0;
-                    $amount = $transaction['total'] ?? 0;
-                    $type = $transaction['type'] ?? '';
-                @endphp
-                <tr>
-                    <td>{{ $transaction['id'] ?? '' }}</td>
-                    <td>{{ \Carbon\Carbon::parse($transaction['date'])->format('Y-m-d') }}</td>
-                    <td>{{ $transaction['description'] ?? '' }}</td>
+        @foreach ($sortedEvents as $event)
+            @php
+                $pokok = $event['pokok'] ?? 0;
+                $hasil = $event['hasil'] ?? 0;
+                $total = $event['total'] ?? 0;
+                $isPiutang = $event['type'] == 'piutang';
 
-                    @if ($type == 'piutang')
-                        <td class="text-end">{{ abs($bagiPokok) }}</td>
-                        <td class="text-end">{{ abs($bagiHasil) }}</td>
-                        <td class="text-end">{{ abs($amount) }}</td>
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                    @else
-                        <td></td>
-                        <td></td>
-                        <td></td>
-                        <td class="text-end">{{ abs($bagiPokok) }}</td>
-                        <td class="text-end">{{ abs($bagiHasil) }}</td>
-                        <td class="text-end">{{ abs($amount) }}</td>
-                    @endif
-
-                    @php
-                        if (!str_starts_with($transaction['description'], 'Pembayaran menggunakan titipan')) {
-                            $saldoPokok += $bagiPokok;
-                            $saldoBagiHasil += $bagiHasil;
-                            $saldoTotal += $amount;
-                        }
-                    @endphp
-
-                    <td class="text-end">{{ $saldoPokok }}</td>
-                    <td class="text-end">{{ $saldoBagiHasil }}</td>
-                    <td class="text-end">{{ $saldoTotal }}</td>
-                </tr>
-            @endforeach
-        @endif
-        <tr style="font-weight: bold;">
-            <td colspan="3" class="text-end"><strong>Total</strong></td>
-            <td class="text-end">{{ $sortedEvents->where('type', 'piutang')->sum('pokok') }}</td>
-            <td class="text-end">{{ $sortedEvents->where('type', 'piutang')->sum('hasil') }}</td>
-            <td class="text-end">{{ $sortedEvents->where('type', 'piutang')->sum('total') }}</td>
-            <td class="text-end">{{ $sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('pokok') }}</td>
-            <td class="text-end">{{ $sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('hasil') }}</td>
-            <td class="text-end">{{ $sortedEvents->whereIn('type', ['pembayaran', 'titipan_masuk'])->sum('total') }}</td>
-            <td class="text-end">{{ $saldoPokok }}</td>
-            <td class="text-end">{{ $saldoBagiHasil }}</td>
-            <td class="text-end">{{ $saldoTotal }}</td>
-        </tr>
+                if (!str_starts_with($event['description'], 'Pembayaran menggunakan titipan')) {
+                    $saldoPokok += ($isPiutang ? $pokok : -$pokok);
+                    $saldoBagiHasil += ($isPiutang ? $hasil : -$hasil);
+                }
+            @endphp
+            <tr>
+                <td class="border">{{ $event['id'] }}</td>
+                <td class="border">{{ \Carbon\Carbon::parse($event['date'])->format('d/m/Y') }}</td>
+                <td class="border">{{ $event['description'] }}</td>
+                <td class="border text-end">{{ $isPiutang ? abs($pokok) : 0 }}</td>
+                <td class="border text-end">{{ $isPiutang ? abs($hasil) : 0 }}</td>
+                <td class="border text-end">{{ $isPiutang ? abs($total) : 0 }}</td>
+                <td class="border text-end">{{ !$isPiutang ? abs($pokok) : 0 }}</td>
+                <td class="border text-end">{{ !$isPiutang ? abs($hasil) : 0 }}</td>
+                <td class="border text-end">{{ !$isPiutang ? abs($total) : 0 }}</td>
+                <td class="border text-end">{{ $saldoPokok }}</td>
+                <td class="border text-end">{{ $saldoBagiHasil }}</td>
+            </tr>
+        @endforeach
     </tbody>
 </table>
 

@@ -68,7 +68,11 @@
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">Riwayat Transaksi</h5>
-                        <a href="<?php echo e(route('transactions.create', ['debtor_id' => $debtor->id])); ?>"
+                        <a href="<?php echo e(route('transactions.create', [
+                            'debtor_id' => $debtor->id,
+                            'balance' => $debtor->current_balance,
+                            'titipan' => $debtor->total_titipan
+                        ])); ?>"
                             class="btn btn-sm btn-primary">
                             <i class="bi bi-plus-circle me-1"></i> Tambah Transaksi
                         </a>
@@ -115,7 +119,7 @@
                                             <td class="text-end"><?php echo e($transaction->formatted_bagi_hasil); ?></td>
                                             <td class="text-center">
                                                 <span
-                                                    class="badge bg-<?php echo e($transaction->type == 'piutang' ? 'info' : 'success'); ?>">
+                                                    class="badge bg-<?php echo e($transaction->type == 'piutang' ? 'danger' : 'success'); ?>">
                                                     <?php echo e(ucfirst($transaction->type)); ?>
 
                                                 </span>

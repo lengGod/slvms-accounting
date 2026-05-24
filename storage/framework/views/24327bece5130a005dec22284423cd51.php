@@ -1,8 +1,8 @@
-@extends('layouts.app')
 
-@php($pageTitle = 'Tambah Transaksi')
 
-@section('content')
+<?php ($pageTitle = 'Tambah Transaksi'); ?>
+
+<?php $__env->startSection('content'); ?>
     <div class="container-fluid p-4">
         <!-- Header Section -->
         <div class="row mb-4">
@@ -11,7 +11,7 @@
                 <p class="text-muted">Tambahkan transaksi baru ke dalam sistem.</p>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                <a href="{{ route('transactions.index') }}" class="btn btn-secondary">
+                <a href="<?php echo e(route('transactions.index')); ?>" class="btn btn-secondary">
                     <i class="bi bi-arrow-left me-1"></i> Kembali
                 </a>
             </div>
@@ -19,25 +19,33 @@
 
         <div class="card shadow-sm">
             <div class="card-body">
-                <form action="{{ route('transactions.store') }}" method="POST" id="transactionForm">
-                    @csrf
+                <form action="<?php echo e(route('transactions.store')); ?>" method="POST" id="transactionForm">
+                    <?php echo csrf_field(); ?>
                     <div class="row g-3">
                         <div class="col-md-6">
                             <label for="debtor_id" class="form-label">Debitur</label>
                             <select class="form-select" id="debtor_id" name="debtor_id" required>
                                 <option value="">Pilih Debitur</option>
-                                @foreach ($debtors as $debtor)
-                                    <option value="{{ $debtor->id }}" data-balance="{{ $debtor->current_balance }}"
-                                        data-titipan="{{ $debtor->total_titipan }}"
-                                        {{ isset($selectedDebtorId) && $selectedDebtorId == $debtor->id ? 'selected' : '' }}>
-                                        {{ $debtor->name }}
+                                <?php $__currentLoopData = $debtors; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $debtor): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($debtor->id); ?>" data-balance="<?php echo e($debtor->current_balance); ?>"
+                                        data-titipan="<?php echo e($debtor->total_titipan); ?>"
+                                        <?php echo e(isset($selectedDebtorId) && $selectedDebtorId == $debtor->id ? 'selected' : ''); ?>>
+                                        <?php echo e($debtor->name); ?>
+
                                     </option>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
 
-                            @error('debtor_id')
-                                <div class="text-danger small">{{ $message }}</div>
-                            @enderror
+                            <?php $__errorArgs = ['debtor_id'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="text-danger small"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                             <div id="debtorInfo" class="mt-2 small text-muted" style="display: none;">
                                 <div>Saldo Saat Ini: <span id="currentBalance" class="fw-medium"></span></div>
                                 <div>Total Titipan: <span id="totalTitipan" class="fw-medium"></span></div>
@@ -50,17 +58,31 @@
                                 <option value="piutang">Piutang</option>
                                 <option value="pembayaran">Pembayaran</option>
                             </select>
-                            @error('type')
-                                <div class="text-danger small">{{ $message }}</div>
-                            @enderror
+                            <?php $__errorArgs = ['type'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="text-danger small"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                         </div>
                         <div class="col-md-6">
                             <label for="transaction_date" class="form-label">Tanggal Transaksi</label>
                             <input type="date" class="form-control" id="transaction_date" name="transaction_date"
-                                value="{{ date('Y-m-d') }}" required>
-                            @error('transaction_date')
-                                <div class="text-danger small">{{ $message }}</div>
-                            @enderror
+                                value="<?php echo e(date('Y-m-d')); ?>" required>
+                            <?php $__errorArgs = ['transaction_date'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="text-danger small"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                         </div>
                         <div class="col-md-6">
                             <label for="amount" class="form-label">Jumlah</label>
@@ -70,9 +92,16 @@
                                     min="0" step="1">
                             </div>
                             <small class="text-muted">Jika diisi, bagi hasil dan pokok akan dihitung otomatis</small>
-                            @error('amount')
-                                <div class="text-danger small">{{ $message }}</div>
-                            @enderror
+                            <?php $__errorArgs = ['amount'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="text-danger small"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                         </div>
                         <div class="col-12">
                             <div class="alert alert-info d-flex align-items-center" role="alert">
@@ -92,9 +121,16 @@
                                 <input type="number" class="form-control" id="bagi_hasil" name="bagi_hasil" placeholder="0"
                                     min="0" step="1">
                             </div>
-                            @error('bagi_hasil')
-                                <div class="text-danger small">{{ $message }}</div>
-                            @enderror
+                            <?php $__errorArgs = ['bagi_hasil'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="text-danger small"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                         </div>
                         <div class="col-md-6">
                             <label for="bagi_pokok" class="form-label">Pokok</label>
@@ -103,9 +139,16 @@
                                 <input type="number" class="form-control" id="bagi_pokok" name="bagi_pokok" placeholder="0"
                                     min="0" step="1">
                             </div>
-                            @error('bagi_pokok')
-                                <div class="text-danger small">{{ $message }}</div>
-                            @enderror
+                            <?php $__errorArgs = ['bagi_pokok'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="text-danger small"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                         </div>
                         <div id="titipanSection" class="col-12" style="display: none;">
                             <div class="alert alert-info d-flex align-items-center" role="alert">
@@ -140,13 +183,20 @@
                             <label for="description" class="form-label">Keterangan</label>
                             <input type="text" class="form-control" id="description" name="description"
                                 placeholder="Keterangan (opsional)">
-                            @error('description')
-                                <div class="text-danger small">{{ $message }}</div>
-                            @enderror
+                            <?php $__errorArgs = ['description'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="text-danger small"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
                         </div>
                         <div class="col-12">
                             <div class="d-flex justify-content-end">
-                                <a href="{{ route('transactions.index') }}" class="btn btn-secondary me-2">
+                                <a href="<?php echo e(route('transactions.index')); ?>" class="btn btn-secondary me-2">
                                     <i class="bi bi-arrow-left me-1"></i> Kembali
                                 </a>
                                 <button type="submit" class="btn btn-primary" id="submitBtn">
@@ -160,7 +210,7 @@
         </div>
     </div>
 
-    @push('scripts')
+    <?php $__env->startPush('scripts'); ?>
         <script>
             (function() {
                 // Wait for TomSelect to be ready, then update info
@@ -351,5 +401,7 @@
                 document.addEventListener('turbolinks:load', run);
             })();
         </script>
-    @endpush
-@endsection
+    <?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\laragon\www\slv-acounting\resources\views/transactions/create.blade.php ENDPATH**/ ?>

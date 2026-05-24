@@ -48,6 +48,7 @@ Route::middleware(['auth'])->group(function () {
     Route::middleware('role:admin,accounting')->prefix('reports')->group(function () {
         // Kartu Mutasi
         Route::get('kartu-mutasi', [ReportController::class, 'kartuMutasi'])->name('reports.kartu-mutasi');
+        Route::get('kartu-mutasi/print', [ReportController::class, 'printKartuMutasi'])->name('reports.kartu-mutasi.print');
         Route::get('kartu-mutasi/{id}', [ReportController::class, 'showKartuMutasi'])->name('reports.kartu-mutasi.show');
         Route::get('export-kartu-mutasi', [ReportController::class, 'exportKartuMutasi'])->name('reports.export-kartu-mutasi');
 
