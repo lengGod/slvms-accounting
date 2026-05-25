@@ -352,6 +352,33 @@ unset($__errorArgs, $__bag); ?>
                         }
                     }
 
+                    // Handle use titipan button click
+                    useTitipanBtn.addEventListener('click', function(e) {
+                        e.preventDefault();
+
+                        const debtorId = debtorSelectElement.value;
+                        const amount = parseFloat(amountInput.value) || 0;
+                        const bagiHasil = parseFloat(bagiHasilInput.value) || 0;
+                        const bagiPokok = parseFloat(bagiPokokInput.value) || 0;
+                        const transactionDate = document.getElementById('transaction_date').value;
+                        const description = document.getElementById('description').value;
+
+                        if (debtorId && amount > 0) {
+                            const url = "<?php echo e(route('transactions.create-with-titipan-confirmation')); ?>";
+                            const params = new URLSearchParams({
+                                debtor_id: debtorId,
+                                amount: amount,
+                                bagi_hasil: bagiHasil,
+                                bagi_pokok: bagiPokok,
+                                transaction_date: transactionDate,
+                                description: description
+                            });
+                            window.location.href = url + '?' + params.toString();
+                        } else {
+                            alert('Pilih debitur dan masukkan jumlah piutang terlebih dahulu');
+                        }
+                    });
+
                     // Add event listeners
                     amountInput.addEventListener('input', calculateAllocation);
                     bagiHasilInput.addEventListener('input', calculateAmount);

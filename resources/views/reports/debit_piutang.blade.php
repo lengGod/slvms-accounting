@@ -125,11 +125,11 @@
                                         <td class="text-center">
                                             <span
                                                 class="badge
-                                            @if ($debtor->debtor_status == 'lunas') bg-success
-                                            @elseif ($debtor->debtor_status == 'belum_lunas') bg-warning
+                                            @if ($debtor->debtor_status == 'Lunas') bg-success
+                                            @elseif ($debtor->debtor_status == 'Belum Lunas') bg-warning
                                             @elseif ($debtor->debtor_status == 'Titipan') bg-info
                                             @else bg-secondary @endif">
-                                                {{ ucfirst(str_replace('_', ' ', $debtor->debtor_status)) }}
+                                                {{ $debtor->debtor_status }}
                                             </span>
                                         </td>
                                     </tr>

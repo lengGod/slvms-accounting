@@ -136,14 +136,22 @@ class TransactionController extends Controller
 
             // 2. Create Payment Transaction (if titipan is used)
             if ($usedTitipan > 0) {
-                // Calculate proportional allocation based on original piutang
-                // Piutang amount is negative in DB, but piutangAmount is positive
-                $ratio = $usedTitipan / $piutangAmount;
-                $paymentPokok = $piutangPokok * $ratio;
-                $paymentHasil = $piutangHasil * $ratio;
+                // FIXED: Use direct allocation instead of ratio to ensure it matches input exactly
+                // Priority: Pay Bagi Hasil first, then Pokok (or vice versa, but consistent)
+                // Let's match the input logic: if usedTitipan is partial, we allocate it properly.
+                
+                if ($usedTitipan == $piutangAmount) {
+                    // Fully paid by titipan
+                    $paymentPokok = $piutangPokok;
+                    $paymentHasil = $piutangHasil;
+                } else {
+                    // Partially paid by titipan - allocate to Hasil first, then Pokok
+                    $paymentHasil = min($usedTitipan, $piutangHasil);
+                    $paymentPokok = max(0, $usedTitipan - $paymentHasil);
+                }
 
                 // Create payment transaction from titipan (POSITIVE VALUES)
-                Transaction::create([
+                $paymentTx = Transaction::create([
                     'debtor_id' => $debtor->id,
                     'type' => 'pembayaran',
                     'amount' => $usedTitipan,
@@ -158,7 +166,7 @@ class TransactionController extends Controller
                 $debtor->recordTitipanAdjustment(
                     -$usedTitipan,
                     'Penggunaan untuk piutang #' . $piutangTx->id,
-                    $piutangTx->id,
+                    $paymentTx->id,
                     -$paymentPokok,
                     -$paymentHasil
                 );
@@ -431,22 +439,25 @@ class TransactionController extends Controller
         try {
             $debtor = $transaction->debtor;
 
-            $associatedTitipans = Titipan::where('transaction_id', $transaction->id)->get();
-            foreach ($associatedTitipans as $titipan) {
-                $debtor->recordTitipanAdjustment(
-                    -1 * $titipan->amount,
-                    'Pengembalian titipan dari transaksi yang dihapus #' . $transaction->id,
-                    null,
-                    -1 * $titipan->bagi_pokok,
-                    -1 * $titipan->bagi_hasil
-                );
+            // Jika ini adalah transaksi Piutang, hapus juga pembayaran otomatis yang terkait
+            if ($transaction->type === 'piutang') {
+                $automaticPayments = Transaction::where('debtor_id', $debtor->id)
+                    ->where('type', 'pembayaran')
+                    ->where('description', 'like', 'Pembayaran otomatis titipan untuk piutang #' . $transaction->id)
+                    ->get();
+
+                foreach ($automaticPayments as $autoPayment) {
+                    $autoPayment->delete(); // Ini akan memicu event deleting dan menghapus titipan terkait
+                }
             }
 
-            Titipan::where('transaction_id', $transaction->id)->delete();
+            // Titipan yang terkait langsung dengan transaksi ini akan dihapus melalui 
+            // event 'deleting' pada model Transaction (boot method).
+
             $transaction->delete();
 
             DB::commit();
-            return redirect()->route('transactions.index')->with('success', 'Transaksi berhasil dihapus dan nominal dikembalikan.');
+            return redirect()->route('transactions.index')->with('success', 'Transaksi berhasil dihapus dan saldo dikembalikan.');
         } catch (\Throwable $e) {
             DB::rollBack();
             return redirect()->route('transactions.index')->with('error', 'Gagal menghapus transaksi: ' . $e->getMessage());
