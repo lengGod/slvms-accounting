@@ -19,23 +19,6 @@
                     <button type="submit" class="btn btn-danger">Hapus</button>
                 </form>
             </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    (function() {
-        const modalElement = document.getElementById('confirmModal');
-
-        function cleanupBackdrop() {
-            document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-            document.body.classList.remove('modal-open');
-            document.body.style.overflow = '';
-            document.body.style.paddingRight = '';
-        }
-
-        if (modalElement) {
-            modalElement.addEventListener('hidden.bs.modal', cleanupBackdrop);
-        }
-    })();
-</script>
+            </div>
+            </div>
+            </div>

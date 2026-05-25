@@ -137,39 +137,131 @@
 
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-    <!-- Fungsi JavaScript untuk cetak -->
+    <!-- Fungsi JavaScript Global -->
     <script>
-        // Toggle sidebar untuk mobile
-        document.addEventListener('turbo:load', function() {
-            const sidebarToggle = document.getElementById('sidebar-toggle');
-            const sidebar = document.querySelector('aside');
+        // Global initialization to handle Turbo and Bootstrap Modals
+        (function() {
+            if (window.appScriptsInitialized) return;
 
-            if (sidebarToggle) {
-                sidebarToggle.addEventListener('click', function() {
-                    sidebar.classList.toggle('show');
-                });
-            }
-
-            // Close sidebar when clicking outside on mobile
+            // Sidebar Toggle & Close Logic (Delegated)
             document.addEventListener('click', function(event) {
-                const isClickInsideSidebar = sidebar.contains(event.target);
-                const isClickOnToggle = sidebarToggle && sidebarToggle.contains(event.target);
+                const sidebarToggle = event.target.closest('#sidebar-toggle');
+                const sidebarClose = event.target.closest('.sidebar-close');
+                const sidebar = document.querySelector('aside');
+                
+                if (sidebarToggle && sidebar) {
+                    sidebar.classList.toggle('show');
+                    return;
+                }
 
-                if (!isClickInsideSidebar && !isClickOnToggle && sidebar.classList.contains('show')) {
+                if (sidebarClose && sidebar) {
                     sidebar.classList.remove('show');
+                    return;
+                }
+
+                if (sidebar && sidebar.classList.contains('show')) {
+                    const isClickInsideSidebar = sidebar.contains(event.target);
+                    const isClickOnToggle = event.target.closest('#sidebar-toggle');
+
+                    if (!isClickInsideSidebar && !isClickOnToggle) {
+                        sidebar.classList.remove('show');
+                    }
                 }
             });
-        });
 
-        //-----fungsi javascript untuk cetak-----//
+            // Profile Dropdown Logic (Delegated)
+            document.addEventListener('click', function(event) {
+                const profileDropdown = event.target.closest('#profileDropdown');
+                const profileMenu = document.getElementById('profileMenu');
+                const dropdownIcon = profileDropdown ? profileDropdown.querySelector('.dropdown-icon') : null;
+
+                if (profileDropdown && profileMenu) {
+                    event.stopPropagation();
+                    profileMenu.classList.toggle('show');
+                    if (dropdownIcon) dropdownIcon.classList.toggle('rotate');
+                    return;
+                }
+
+                // Close profile dropdown when clicking outside
+                const activeProfileMenu = document.querySelector('.profile-dropdown-menu.show');
+                if (activeProfileMenu && !event.target.closest('.profile-dropdown-menu')) {
+                    activeProfileMenu.classList.remove('show');
+                    const activeIcon = document.querySelector('.dropdown-icon.rotate');
+                    if (activeIcon) activeIcon.classList.remove('rotate');
+                }
+            });
+
+            // Delete Button Delegation (Confirm Modal)
+            document.addEventListener('click', function(event) {
+                const button = event.target.closest('.delete-btn');
+                if (!button) return;
+
+                event.preventDefault();
+                const modalElement = document.getElementById('confirmModal');
+                const confirmModalForm = document.getElementById('confirmModalForm');
+                
+                if (modalElement && confirmModalForm && window.bootstrap) {
+                    const action = button.getAttribute('data-action');
+                    confirmModalForm.setAttribute('action', action);
+                    
+                    const confirmModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+                    confirmModal.show();
+                }
+            });
+
+            // Validation Modal Auto-show & Sidebar Dropdown Sync
+            document.addEventListener('turbo:load', function() {
+                // Auto-show validation modal
+                const valModalElement = document.getElementById('validationModal');
+                if (valModalElement && window.bootstrap) {
+                    const validationModal = bootstrap.Modal.getOrCreateInstance(valModalElement);
+                    validationModal.show();
+                }
+
+                // Auto-expand Sidebar Dropdowns if they contain active items
+                document.querySelectorAll('.nav-item .dropdown-menu').forEach(menu => {
+                    if (menu.querySelector('.dropdown-item.active')) {
+                        const toggle = menu.previousElementSibling;
+                        if (toggle && toggle.classList.contains('dropdown-toggle')) {
+                            toggle.setAttribute('aria-expanded', 'true');
+                            menu.classList.add('show');
+                        }
+                    }
+                });
+            });
+
+            // Turbo Cleanup (Before Cache)
+            document.addEventListener('turbo:before-cache', function() {
+                // Hide any open modals before caching
+                document.querySelectorAll('.modal.show').forEach(modalEl => {
+                    const modal = bootstrap.Modal.getInstance(modalEl);
+                    if (modal) modal.hide();
+                });
+
+                // Ensure backdrops are removed
+                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                document.body.classList.remove('modal-open');
+                document.body.style.overflow = '';
+                document.body.style.paddingRight = '';
+            });
+
+            // Extra safety for backdrop cleanup
+            document.addEventListener('hidden.bs.modal', function() {
+                if (document.querySelectorAll('.modal.show').length === 0) {
+                    document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
+                    document.body.classList.remove('modal-open');
+                    document.body.style.overflow = '';
+                    document.body.style.paddingRight = '';
+                }
+            });
+
+            window.appScriptsInitialized = true;
+        })();
+
+        // Function for printing content
         function printContent() {
-            // Buat elemen baru untuk konten yang akan dicetak
             const content = document.getElementById('print-content').innerHTML;
-
-            // Buat window baru untuk cetak
             const printWindow = window.open('', '_blank');
-
-            // Buat struktur HTML untuk halaman cetak
             printWindow.document.write(`
                 <!DOCTYPE html>
                 <html>
@@ -251,51 +343,11 @@
             `);
 
             printWindow.document.close();
-
-            // Tunggu hingga konten selesai dimuat
             printWindow.onload = function() {
                 printWindow.print();
                 printWindow.close();
             };
         }
-
-        (function() {
-            function initGlobalScripts() {
-                // Delete button delegation
-                if (!document.body.dataset.deleteListenerAttached) {
-                    document.addEventListener('click', function(event) {
-                        const button = event.target.closest('.delete-btn');
-                        if (!button) return;
-
-                        event.preventDefault();
-                        const modalElement = document.getElementById('confirmModal');
-                        const confirmModalForm = document.getElementById('confirmModalForm');
-                        
-                        if (modalElement && confirmModalForm && window.bootstrap) {
-                            const action = button.getAttribute('data-action');
-                            confirmModalForm.setAttribute('action', action);
-                            const confirmModal = new bootstrap.Modal(modalElement);
-                            confirmModal.show();
-                        }
-                    });
-                    document.body.dataset.deleteListenerAttached = "true";
-                }
-
-                // Validation modal auto-show
-                const valModalElement = document.getElementById('validationModal');
-                if (valModalElement && window.bootstrap) {
-                    const validationModal = new bootstrap.Modal(valModalElement);
-                    validationModal.show();
-                }
-            }
-
-            document.addEventListener('turbo:load', initGlobalScripts);
-            if (document.readyState !== 'loading') {
-                initGlobalScripts();
-            } else {
-                document.addEventListener('DOMContentLoaded', initGlobalScripts);
-            }
-        })();
     </script>
 
     @stack('scripts')

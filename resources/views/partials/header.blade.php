@@ -45,7 +45,6 @@
     <form id="logout-form" action="{{ route('logout') }}" method="POST" style="display: none;">
         @csrf
     </form>
-@endif
 
 <style>
     /* Custom profile dropdown styles */
@@ -117,34 +116,5 @@
         cursor: pointer;
     }
 </style>
+@endif
 
-<script>
-    document.addEventListener('turbo:load', function() {
-        const profileDropdown = document.getElementById('profileDropdown');
-        const profileMenu = document.getElementById('profileMenu');
-        const dropdownIcon = profileDropdown.querySelector('.dropdown-icon');
-
-        // Remove old listeners if they exist (to prevent duplicates)
-        profileDropdown.replaceWith(profileDropdown.cloneNode(true));
-        
-        // Re-get elements after clone
-        const newProfileDropdown = document.getElementById('profileDropdown');
-        const newProfileMenu = document.getElementById('profileMenu');
-        const newDropdownIcon = newProfileDropdown.querySelector('.dropdown-icon');
-
-        // Toggle profile dropdown
-        newProfileDropdown.addEventListener('click', function(e) {
-            e.stopPropagation();
-            newProfileMenu.classList.toggle('show');
-            newDropdownIcon.classList.toggle('rotate');
-        });
-
-        // Close dropdown when clicking outside
-        document.addEventListener('click', function(e) {
-            if (!newProfileDropdown.contains(e.target) && !newProfileMenu.contains(e.target)) {
-                newProfileMenu.classList.remove('show');
-                newDropdownIcon.classList.remove('rotate');
-            }
-        });
-    });
-</script>

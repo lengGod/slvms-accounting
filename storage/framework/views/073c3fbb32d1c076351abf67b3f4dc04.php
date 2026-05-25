@@ -181,15 +181,12 @@
                                                         class="btn btn-sm btn-outline-secondary" title="Edit">
                                                         <i class="bi bi-pencil"></i>
                                                     </a>
-                                                    <form action="<?php echo e(route('titipans.destroy', $titipan)); ?>" method="POST"
-                                                        onsubmit="return confirm('Yakin ingin menghapus data ini?')">
-                                                        <?php echo csrf_field(); ?>
-                                                        <?php echo method_field('DELETE'); ?>
-                                                        <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                            title="Hapus">
-                                                            <i class="bi bi-trash"></i>
-                                                        </button>
-                                                    </form>
+                                                    <button type="button" 
+                                                        class="btn btn-sm btn-outline-danger delete-btn" 
+                                                        data-action="<?php echo e(route('titipans.destroy', $titipan)); ?>"
+                                                        title="Hapus">
+                                                        <i class="bi bi-trash"></i>
+                                                    </button>
                                                 </div>
                                             </td>
                                         </tr>
@@ -334,14 +331,11 @@
                             <a href="<?php echo e(route('titipans.create', ['debtor_id' => $debtor->id])); ?>" class="btn btn-info">
                                 <i class="bi bi-plus-circle me-1"></i> Tambah Titipan
                             </a>
-                            <form action="<?php echo e(route('debtors.destroy', $debtor)); ?>" method="POST"
-                                onsubmit="return confirm('Yakin ingin menghapus data ini?')">
-                                <?php echo csrf_field(); ?>
-                                <?php echo method_field('DELETE'); ?>
-                                <button type="submit" class="btn btn-outline-danger w-100">
-                                    <i class="bi bi-trash me-1"></i> Hapus Debitur
-                                </button>
-                            </form>
+                            <button type="button" 
+                                class="btn btn-outline-danger delete-btn" 
+                                data-action="<?php echo e(route('debtors.destroy', $debtor)); ?>">
+                                <i class="bi bi-trash me-1"></i> Hapus Debitur
+                            </button>
                         </div>
                     </div>
                 </div>

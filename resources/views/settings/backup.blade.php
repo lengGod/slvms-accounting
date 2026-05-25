@@ -59,16 +59,12 @@
                                                     class="btn btn-sm btn-outline-primary" title="Download">
                                                     <i class="bi bi-download"></i>
                                                 </a>
-                                                <form action="{{ route('settings.delete-backup', $backup['filename']) }}"
-                                                    method="POST"
-                                                    onsubmit="return confirm('Yakin ingin menghapus backup ini?')">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="btn btn-sm btn-outline-danger"
-                                                        title="Hapus">
-                                                        <i class="bi bi-trash"></i>
-                                                    </button>
-                                                </form>
+                                                <button type="button" 
+                                                    class="btn btn-sm btn-outline-danger delete-btn" 
+                                                    data-action="{{ route('settings.delete-backup', $backup['filename']) }}"
+                                                    title="Hapus">
+                                                    <i class="bi bi-trash"></i>
+                                                </button>
                                             </div>
                                         </td>
                                     </tr>

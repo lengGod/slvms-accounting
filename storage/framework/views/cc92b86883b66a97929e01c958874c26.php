@@ -378,57 +378,5 @@
             }
         }
     </style>
-
-    <script>
-        document.addEventListener('turbo:load', function() {
-            // Initialize Bootstrap dropdowns
-            const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-
-            // Check and open dropdown if it contains active item
-            const laporanDropdown = document.getElementById('laporanDropdown');
-            if (laporanDropdown) {
-                const laporanMenu = laporanDropdown.nextElementSibling;
-                const hasActiveItem = laporanMenu.querySelector('.dropdown-item.active');
-
-                if (hasActiveItem) {
-                    laporanDropdown.setAttribute('aria-expanded', 'true');
-                    laporanMenu.classList.add('show');
-                }
-            }
-
-            const settingsDropdown = document.getElementById('settingsDropdown');
-            if (settingsDropdown) {
-                const settingsMenu = settingsDropdown.nextElementSibling;
-                const hasActiveItem = settingsMenu.querySelector('.dropdown-item.active');
-
-                if (hasActiveItem) {
-                    settingsDropdown.setAttribute('aria-expanded', 'true');
-                    settingsMenu.classList.add('show');
-                }
-            }
-
-            // Mobile sidebar toggle
-            const sidebarClose = document.querySelector('.sidebar-close');
-            if (sidebarClose) {
-                sidebarClose.addEventListener('click', function() {
-                    document.querySelector('aside').classList.remove('show');
-                });
-            }
-
-            // Close sidebar when clicking outside on mobile
-            document.addEventListener('click', function(event) {
-                const sidebar = document.querySelector('aside');
-                const sidebarToggle = document.querySelector('[data-sidebar-toggle]');
-
-                if (window.innerWidth <= 768 &&
-                    sidebar &&
-                    !sidebar.contains(event.target) &&
-                    sidebarToggle &&
-                    !sidebarToggle.contains(event.target)) {
-                    sidebar.classList.remove('show');
-                }
-            });
-        });
-    </script>
 </aside>
 <?php /**PATH C:\laragon\www\slv-acounting\resources\views/partials/sidebar.blade.php ENDPATH**/ ?>

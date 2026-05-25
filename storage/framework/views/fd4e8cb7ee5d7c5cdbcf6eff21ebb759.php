@@ -20,52 +20,7 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
                 </div>
-            </div>
-        </div>
-    </div>
-
-    <script>
-        (function() {
-            const modalElement = document.getElementById('validationModal');
-
-            function cleanupBackdrop() {
-                document.querySelectorAll('.modal-backdrop').forEach(el => el.remove());
-                document.body.classList.remove('modal-open');
-                document.body.style.overflow = '';
-                document.body.style.paddingRight = '';
-            }
-
-            function handleValidationModal() {
-                if (modalElement && window.bootstrap) {
-                    const existingModal = bootstrap.Modal.getInstance(modalElement);
-                    const validationModal = existingModal || new bootstrap.Modal(modalElement, {
-                        backdrop: true,
-                        keyboard: true
-                    });
-                    
-                    validationModal.show();
-                }
-            }
-
-            // Cleanup ketika modal benar-benar tertutup
-            if (modalElement) {
-                modalElement.addEventListener('hidden.bs.modal', cleanupBackdrop);
-            }
-
-            // Jalankan saat turbo load
-            document.addEventListener('turbo:load', handleValidationModal);
-            
-            // Bersihkan backdrop SAAT AKAN berpindah halaman
-            document.addEventListener('turbo:before-cache', function() {
-                const instance = window.bootstrap ? bootstrap.Modal.getInstance(modalElement) : null;
-                if (instance) instance.hide();
-                cleanupBackdrop();
-            });
-
-            // Jalankan jika sudah ready
-            if (document.readyState !== 'loading') {
-                handleValidationModal();
-            }
-        })();
-    </script>
-<?php endif; ?><?php /**PATH C:\laragon\www\slv-acounting\resources\views/partials/validation-modal.blade.php ENDPATH**/ ?>
+                </div>
+                </div>
+                </div>
+                <?php endif; ?><?php /**PATH C:\laragon\www\slv-acounting\resources\views/partials/validation-modal.blade.php ENDPATH**/ ?>
